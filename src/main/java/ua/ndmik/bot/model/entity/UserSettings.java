@@ -17,6 +17,7 @@ public class UserSettings {
 
     private String groupId;
 
+    //TODO: rm after handlers impl
     @Enumerated(EnumType.STRING)
     private UserState state;
 

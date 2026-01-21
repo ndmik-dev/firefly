@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
+import ua.ndmik.bot.handler.CallbackHandlerResolver;
 import ua.ndmik.bot.model.MenuCallback;
 import ua.ndmik.bot.model.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
@@ -46,6 +47,7 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     private final UserSettingsRepository userRepository;
     private final ScheduleResponseConverter converter;
     private final ScheduleRepository scheduleRepository;
+    private final CallbackHandlerResolver callbackHandlerResolver;
 
     public DtekShutdownBot(DtekClient dtekClient,
                            DtekShutdownsService shutdownsService,
@@ -53,7 +55,8 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
                            UserSettingsRepository userRepository,
                            @Value("${telegram.bot-token}") String botToken,
                            ScheduleResponseConverter converter,
-                           ScheduleRepository scheduleRepository) {
+                           ScheduleRepository scheduleRepository,
+                           CallbackHandlerResolver callbackHandlerResolver) {
         this.dtekClient = dtekClient;
         this.shutdownsService = shutdownsService;
         this.formatter = formatter;
@@ -62,6 +65,7 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
         this.userRepository = userRepository;
         this.converter = converter;
         this.scheduleRepository = scheduleRepository;
+        this.callbackHandlerResolver = callbackHandlerResolver;
     }
 
     @Override
@@ -82,7 +86,7 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
         }
 
         if (update.hasCallbackQuery()) {
-            handleCallback();
+            handleCallback(update);
         }
     }
 
@@ -169,7 +173,7 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
 
     private void handleCallback(Update update) {
         MenuCallback callback = MenuCallback.valueOf(update.getCallbackQuery().getData());
-        callback.getHandler().handle(update);
+        callbackHandlerResolver.getHandler(callback).handle(update);
     }
 
     private UserSettings newUser(Long chatId) {
