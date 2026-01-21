@@ -1,0 +1,30 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: dtek-telegram-bot
+  datasource:
+    url: jdbc:sqlite:src/main/resources/db/app.db?busy_timeout=10000&journal_mode=WAL
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 1
+      connection-timeout: 10000
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+        format_sql: true
+    open-in-view: false
+
+server:
+  port: 8080
+
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN}
+
+scheduler:
+  shutdowns:
+    fixed-delay-ms: 900000
