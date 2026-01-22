@@ -34,7 +34,7 @@ public class ScheduleResponseConverter {
                 .map(Map.Entry::getValue)
                 .map(GroupSchedule::getGroupSchedules)
                 .flatMap(entry -> entry.entrySet().stream())
-                .map(entry -> buildSchedule(entry.getValue(), entry.getKey(), ScheduleDay.TODAY))
+                .map(entry -> buildSchedule(entry, ScheduleDay.TODAY, lastUpdate))
                 .forEach(schedules::add);
 
         response.data().entrySet().stream()
@@ -42,20 +42,23 @@ public class ScheduleResponseConverter {
                 .map(Map.Entry::getValue)
                 .map(GroupSchedule::getGroupSchedules)
                 .flatMap(entry -> entry.entrySet().stream())
-                .map(entry -> buildSchedule(entry.getValue(), entry.getKey(), ScheduleDay.TOMORROW))
+                .map(entry -> buildSchedule(entry, ScheduleDay.TOMORROW, lastUpdate))
                 .forEach(schedules::add);
 
         return schedules;
     }
 
-    private Schedule buildSchedule(Map<String, String> schedule,
-                                   String groupId,
-                                   ScheduleDay day) {
+    private Schedule buildSchedule(Map.Entry<String, Map<String, String>> entry,
+                                   ScheduleDay day,
+                                   String lastUpdate) {
+        String groupId = entry.getKey();
+        Map<String, String> schedule = entry.getValue();
         return Schedule.builder()
                 .schedule(mapper.writeValueAsString(schedule))
                 .groupId(groupId.replaceAll("[^0-9.]", ""))
                 .scheduleDay(day)
-                .lastUpdate(LocalDateTime.now())
+                //TODO: fix conversion error
+                .lastUpdate(LocalDateTime.parse(lastUpdate))
                 .needToNotify(Boolean.TRUE)
                 .build();
     }

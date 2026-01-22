@@ -10,12 +10,7 @@ import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static ua.ndmik.bot.model.MenuCallback.GROUP_CLICK;
 
@@ -37,34 +32,24 @@ public class RegionHandler implements CallbackHandler {
     @Override
     public void handle(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
-        Optional<UserSettings> user = userRepository.findByChatId(chatId);
-        String userGroupId = user.isPresent()
-                ? user.get().getGroupId()
-                : "";
+        UserSettings user = userRepository.findByChatId(chatId)
+                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        String userGroupId = user.getGroupId();
         List<String> groupIds = scheduleRepository.findDistinctGroupIds()
                 .stream()
                 .sorted()
                 .toList();
         List<InlineKeyboardButton> buttons = groupIds.stream()
-                .map(groupId -> telegramService.buildButton(
-                        formatButton(groupId, userGroupId),
-                        GROUP_CLICK.name() + ":" + groupId))
+                .map(groupId -> telegramService.button(
+                        formatButton(groupId, userGroupId), GROUP_CLICK.name() + ":" + groupId)
+                )
                 .toList();
-        List<List<InlineKeyboardButton>> buttonChunks = toChunksList(buttons, 2);
-        List<InlineKeyboardRow> rows = buttonChunks.stream()
-                .map(InlineKeyboardRow::new)
-                .toList();
-        InlineKeyboardMarkup menu = telegramService.buildMenu(rows);
+        List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
+        InlineKeyboardMarkup menu = telegramService.menu(rows);
         telegramService.sendMessage("Виберіть групу", menu, chatId);
     }
 
-    private List<List<InlineKeyboardButton>> toChunksList(List<InlineKeyboardButton> buttons, int chunkSize) {
-        AtomicInteger counter = new AtomicInteger();
-        Map<Integer, List<InlineKeyboardButton>> mapOfChunks = buttons.stream()
-                .collect(Collectors.groupingBy(_ -> counter.getAndIncrement() / chunkSize));
-        return new ArrayList<>(mapOfChunks.values());
-    }
-
+    //TODO: move to formatter
     private String formatButton(String groupId, String userGroupId) {
         return groupId.equals(userGroupId)
                 ? "✅ " + groupId

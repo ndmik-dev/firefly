@@ -1,10 +1,7 @@
 package ua.ndmik.bot.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
 import ua.ndmik.bot.model.ScheduleResponse;
@@ -21,20 +18,17 @@ public class ShutdownsScheduler {
 
     private final DtekClient dtekClient;
     private final DtekShutdownsService dtekService;
-    private final TelegramClient telegramClient;
     private final ScheduleRepository scheduleRepository;
     private final UserSettingsRepository userRepository;
     private final ScheduleResponseConverter converter;
 
     public ShutdownsScheduler(DtekClient dtekClient,
                               DtekShutdownsService dtekService,
-                              @Value("${telegram.bot-token}") String botToken,
                               ScheduleRepository scheduleRepository,
                               UserSettingsRepository userRepository,
                               ScheduleResponseConverter converter) {
         this.dtekClient = dtekClient;
         this.dtekService = dtekService;
-        this.telegramClient = new OkHttpTelegramClient(botToken);
         this.scheduleRepository = scheduleRepository;
         this.userRepository = userRepository;
         this.converter = converter;
@@ -42,7 +36,7 @@ public class ShutdownsScheduler {
 
     //TODO: add transactions
     @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}")
-    public void run() {
+    public void processShutdowns() {
         ScheduleResponse scheduleResponse = dtekClient.getShutdownsSchedule();
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
@@ -50,7 +44,7 @@ public class ShutdownsScheduler {
         List<Schedule> updatedSchedules = scheduleRepository.findAllByNeedToNotifyTrue();
         for (Schedule schedule : updatedSchedules) {
             List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(schedule.getGroupId());
-            //TODO: sendMessages
+            //TODO: sendMessages. Fix TODAY/TOMORROW problem
             schedule.setNeedToNotify(Boolean.FALSE);
             scheduleRepository.save(schedule);
         }
@@ -67,9 +61,6 @@ public class ShutdownsScheduler {
 
     private void updateExistingSchedule(Schedule oldSchedule, Schedule newSchedule) {
         if (!oldSchedule.getSchedule().equals(newSchedule.getSchedule())) {
-            oldSchedule.setSchedule(newSchedule.getSchedule());
-            oldSchedule.setLastUpdate(newSchedule.getLastUpdate());
-            oldSchedule.setNeedToNotify(Boolean.TRUE);
             scheduleRepository.save(newSchedule);
         }
     }

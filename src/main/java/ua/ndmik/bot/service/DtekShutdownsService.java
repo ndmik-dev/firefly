@@ -17,7 +17,7 @@ public class DtekShutdownsService {
 
     private final JsonMapper mapper;
 
-    public DtekShutdownsService(JsonMapper mapper) {
+    public DtekShutdownsService() {
         this.mapper = new JsonMapper();
     }
 

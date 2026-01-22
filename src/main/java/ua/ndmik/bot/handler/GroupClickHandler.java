@@ -24,11 +24,10 @@ public class GroupClickHandler implements CallbackHandler {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         String data = update.getCallbackQuery().getData();
         String groupId = extractGroupIdFromCallbackData(data);
-        Optional<UserSettings> user = userRepository.findByChatId(chatId);
-        user.ifPresent(settings -> {
-            settings.setGroupId(groupId);
-            userRepository.save(settings);
-        });
+        UserSettings user = userRepository.findByChatId(chatId)
+                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        user.setGroupId(groupId);
+        userRepository.save(user);
         regionHandler.handle(update);
     }
 

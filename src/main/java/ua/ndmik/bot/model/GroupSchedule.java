@@ -15,7 +15,4 @@ public class GroupSchedule {
     public void putGroupSchedule(String group, Map<String, String> hourStateMap) {
         groupSchedules.put(group, hourStateMap);
     }
-    public Map<String, String> hourStateMap(String group) {
-        return groupSchedules.getOrDefault(group, Map.of());
-    }
 }

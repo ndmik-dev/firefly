@@ -10,7 +10,7 @@ import java.util.Map;
 public class ShutdownTelegramFormatter {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
+    //TODO: create methods for different messages to notify about shutdowns
     public String format(Map<LocalTime, LocalTime> intervals) {
         if (intervals.isEmpty()) {
             return "✅ <b>Відключень не заплановано</b>";
