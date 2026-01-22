@@ -46,7 +46,9 @@ public class RegionHandler implements CallbackHandler {
                 .sorted()
                 .toList();
         List<InlineKeyboardButton> buttons = groupIds.stream()
-                .map(groupId -> telegramService.buildButton(formatButton(groupId, userGroupId), GROUP_CLICK.name()))
+                .map(groupId -> telegramService.buildButton(
+                        formatButton(groupId, userGroupId),
+                        GROUP_CLICK.name() + ":" + groupId))
                 .toList();
         List<List<InlineKeyboardButton>> buttonChunks = toChunksList(buttons, 2);
         List<InlineKeyboardRow> rows = buttonChunks.stream()

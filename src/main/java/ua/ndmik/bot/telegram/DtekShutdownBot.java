@@ -172,7 +172,9 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     }
 
     private void handleCallback(Update update) {
-        MenuCallback callback = MenuCallback.valueOf(update.getCallbackQuery().getData());
+        String data = update.getCallbackQuery().getData();
+        String callbackKey = data.split(":", 2)[0];
+        MenuCallback callback = MenuCallback.valueOf(callbackKey);
         callbackHandlerResolver.getHandler(callback).handle(update);
     }
 

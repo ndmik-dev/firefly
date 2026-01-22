@@ -11,23 +11,28 @@ import java.util.Optional;
 public class GroupClickHandler implements CallbackHandler {
 
     private final UserSettingsRepository userRepository;
+    private final RegionHandler regionHandler;
 
-    public GroupClickHandler(UserSettingsRepository userRepository) {
+    public GroupClickHandler(UserSettingsRepository userRepository,
+                             RegionHandler regionHandler) {
         this.userRepository = userRepository;
+        this.regionHandler = regionHandler;
     }
 
     @Override
     public void handle(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
+        String data = update.getCallbackQuery().getData();
+        String groupId = extractGroupIdFromCallbackData(data);
         Optional<UserSettings> user = userRepository.findByChatId(chatId);
-        String userGroupId = user.isPresent()
-                ? user.get().getGroupId()
-                : "";
-        String clickedGroupId = extractGroupId(update.getCallbackQuery().getData());
-        System.out.println();
+        user.ifPresent(settings -> {
+            settings.setGroupId(groupId);
+            userRepository.save(settings);
+        });
+        regionHandler.handle(update);
     }
 
-    private String extractGroupId(String buttonText) {
-        return buttonText.replaceAll("[^0-9.]", "");
+    private String extractGroupIdFromCallbackData(String data) {
+        return data.substring(data.indexOf(':') + 1);
     }
 }
