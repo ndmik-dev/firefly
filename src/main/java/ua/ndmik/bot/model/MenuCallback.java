@@ -9,6 +9,5 @@ public enum MenuCallback {
     ENABLE_NOTIFICATIONS,
     DISABLE_NOTIFICATIONS,
     GROUP_CLICK,
-    GROUP_BACK,
-    GROUP_DONE
+    GROUP_BACK
 }

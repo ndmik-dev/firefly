@@ -8,6 +8,7 @@ import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleDay;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,8 @@ import static java.util.function.Predicate.not;
 @Component
 public class ScheduleResponseConverter {
 
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
     private final JsonMapper mapper;
 
     public ScheduleResponseConverter() {
@@ -25,7 +28,7 @@ public class ScheduleResponseConverter {
 
     public List<Schedule> toSchedules(ScheduleResponse response) {
         List<Schedule> schedules = new ArrayList<>();
-        String lastUpdate = response.update();
+        LocalDateTime lastUpdate = parseLastUpdate(response.update());
         String todayId = response.today();
         String tomorrowId = getTomorrowId(response);
 
@@ -50,17 +53,20 @@ public class ScheduleResponseConverter {
 
     private Schedule buildSchedule(Map.Entry<String, Map<String, String>> entry,
                                    ScheduleDay day,
-                                   String lastUpdate) {
+                                   LocalDateTime lastUpdate) {
         String groupId = entry.getKey();
         Map<String, String> schedule = entry.getValue();
         return Schedule.builder()
                 .schedule(mapper.writeValueAsString(schedule))
                 .groupId(groupId.replaceAll("[^0-9.]", ""))
                 .scheduleDay(day)
-                //TODO: fix conversion error
-                .lastUpdate(LocalDateTime.parse(lastUpdate))
+                .lastUpdate(lastUpdate)
                 .needToNotify(Boolean.TRUE)
                 .build();
+    }
+
+    private LocalDateTime parseLastUpdate(String lastUpdate) {
+        return LocalDateTime.parse(lastUpdate.trim(), FORMATTER);
     }
 
     private String getTomorrowId(ScheduleResponse response) {
