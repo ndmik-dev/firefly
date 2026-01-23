@@ -6,8 +6,7 @@ import lombok.Getter;
 public enum MenuCallback {
     KYIV,
     REGION,
-    ENABLE_NOTIFICATIONS,
-    DISABLE_NOTIFICATIONS,
+    NOTIFICATION_CLICK,
     GROUP_CLICK,
     GROUP_BACK
 }

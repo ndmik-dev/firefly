@@ -1,10 +1,12 @@
 package ua.ndmik.bot.service;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -19,15 +21,16 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static ua.ndmik.bot.model.MenuCallback.KYIV;
-import static ua.ndmik.bot.model.MenuCallback.REGION;
+import static ua.ndmik.bot.model.MenuCallback.*;
 
 @Service
 @Slf4j
+@Setter
 public class TelegramService {
 
     private final TelegramClient telegramClient;
     private final UserSettingsRepository userRepository;
+    private Integer previousMessageId;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
                            UserSettingsRepository userRepository) {
@@ -40,16 +43,22 @@ public class TelegramService {
                 ? update.getMessage().getChatId()
                 : update.getCallbackQuery().getMessage().getChatId();
 
-        if (update.getMessage() != null && !userRepository.existsByChatId(chatId)) {
-            createNewUser(chatId);
-        }
+        UserSettings user = userRepository.findByChatId(chatId)
+                .orElseGet(() -> createNewUser(chatId));
+//        boolean needToCreate = update.getMessage() != null && userOpt.isEmpty();
 
-        InlineKeyboardRow buttons = new InlineKeyboardRow(
+        InlineKeyboardRow regions = new InlineKeyboardRow(
                 List.of(
                         button("Київ", KYIV.name()),
                         button("Київщина", REGION.name())
                 ));
-        InlineKeyboardMarkup menu = menu(List.of(buttons));
+        String notificationText = user.isNotificationEnabled()
+                ? "Вимкнути сповіщення"
+                : "Увімкнути сповіщення";
+        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
+                button(notificationText, NOTIFICATION_CLICK.name())
+        ));
+        InlineKeyboardMarkup menu = menu(List.of(regions, notifications));
         sendMessage("Вітаю, оберіть дію", menu, chatId);
     }
 
@@ -64,6 +73,21 @@ public class TelegramService {
             telegramClient.execute(message);
         } catch (TelegramApiException e) {
             log.error("Exception while sending message, chatId={}", chatId, e);
+        }
+    }
+
+    public void cleanUpOldMessage(String chatId) {
+        if (previousMessageId == null) {
+            return;
+        }
+        DeleteMessage deleteMessage = DeleteMessage.builder()
+                .chatId(chatId)
+                .messageId(previousMessageId)
+                .build();
+        try {
+            telegramClient.execute(deleteMessage);
+        } catch (TelegramApiException e) {
+            log.error("Exception while deleting message, chatId={}, messageId={}", chatId, previousMessageId, e);
         }
     }
 

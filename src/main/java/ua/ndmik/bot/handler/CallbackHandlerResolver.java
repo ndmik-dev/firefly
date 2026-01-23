@@ -14,13 +14,13 @@ public class CallbackHandlerResolver {
     public CallbackHandlerResolver(DefaultHandler defaultHandler,
                                    RegionHandler regionHandler,
                                    GroupClickHandler groupClickHandler,
-                                   GroupBackHandler groupBackHandler) {
+                                   GroupBackHandler groupBackHandler,
+                                   NotificationsClickHandler notificationsClickHandler) {
 
         this.handlers = new HashMap<>();
         handlers.put(MenuCallback.REGION, regionHandler);
         handlers.put(MenuCallback.KYIV, defaultHandler);
-        handlers.put(MenuCallback.ENABLE_NOTIFICATIONS, defaultHandler);
-        handlers.put(MenuCallback.DISABLE_NOTIFICATIONS, defaultHandler);
+        handlers.put(MenuCallback.NOTIFICATION_CLICK, notificationsClickHandler);
         handlers.put(MenuCallback.GROUP_CLICK, groupClickHandler);
         handlers.put(MenuCallback.GROUP_BACK, groupBackHandler);
     }
