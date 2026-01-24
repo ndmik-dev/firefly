@@ -19,6 +19,12 @@ public class NotificationsClickHandler implements CallbackHandler {
 
     @Override
     public void handle(Update update) {
-
+        long chatId = getChatId(update);
+        userRepository.findByChatId(chatId)
+                .ifPresent(user -> {
+                    user.setNotificationEnabled(!user.isNotificationEnabled());
+                    userRepository.save(user);
+                    telegramService.sendMainMenu(update);
+                });
     }
 }

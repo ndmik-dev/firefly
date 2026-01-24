@@ -21,7 +21,7 @@ public class GroupClickHandler implements CallbackHandler {
 
     @Override
     public void handle(Update update) {
-        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        long chatId = getChatId(update);
         String data = update.getCallbackQuery().getData();
         String groupId = extractGroupIdFromCallbackData(data);
         UserSettings user = userRepository.findByChatId(chatId)

@@ -32,7 +32,7 @@ public class RegionHandler implements CallbackHandler {
 
     @Override
     public void handle(Update update) {
-        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         String userGroupId = user.getGroupId();
