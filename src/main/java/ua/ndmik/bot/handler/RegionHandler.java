@@ -48,7 +48,7 @@ public class RegionHandler implements CallbackHandler {
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
         rows.add(new InlineKeyboardRow(List.of(telegramService.button("Назад", GROUP_BACK.name()))));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
-        telegramService.sendMessage("Виберіть групу", menu, chatId);
+        telegramService.sendMenu(update, "Виберіть групу", menu);
     }
 
     //TODO: move to formatter

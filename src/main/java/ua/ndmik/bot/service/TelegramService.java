@@ -1,13 +1,10 @@
 package ua.ndmik.bot.service;
 
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -27,12 +24,10 @@ import static ua.ndmik.bot.model.MenuCallback.*;
 
 @Service
 @Slf4j
-@Setter
 public class TelegramService {
 
     private final TelegramClient telegramClient;
     private final UserSettingsRepository userRepository;
-    private Integer previousMessageId;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
                            UserSettingsRepository userRepository) {
@@ -44,7 +39,6 @@ public class TelegramService {
         long chatId = update.getMessage() != null
                 ? update.getMessage().getChatId()
                 : update.getCallbackQuery().getMessage().getChatId();
-
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseGet(() -> createNewUser(chatId));
 //        boolean needToCreate = update.getMessage() != null && userOpt.isEmpty();
@@ -61,7 +55,7 @@ public class TelegramService {
                 button(notificationText, NOTIFICATION_CLICK.name())
         ));
         InlineKeyboardMarkup menu = menu(List.of(regions, notifications));
-        sendMessage("Вітаю, оберіть дію", menu, chatId);
+        sendMenu(update, "Вітаю, оберіть дію", menu);
     }
 
     public void sendMessage(String text, InlineKeyboardMarkup markup, long chatId) {
@@ -78,18 +72,31 @@ public class TelegramService {
         }
     }
 
-    public void cleanUpOldMessage(String chatId) {
-        if (previousMessageId == null) {
+    public void sendMenu(Update update, String text, InlineKeyboardMarkup markup) {
+        if (update.getCallbackQuery() != null && update.getCallbackQuery().getMessage() != null) {
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+            int messageId = update.getCallbackQuery().getMessage().getMessageId();
+            editMessage(text, markup, chatId, messageId);
             return;
         }
-        DeleteMessage deleteMessage = DeleteMessage.builder()
+        if (update.getMessage() != null) {
+            long chatId = update.getMessage().getChatId();
+            sendMessage(text, markup, chatId);
+        }
+    }
+
+    private void editMessage(String text, InlineKeyboardMarkup markup, long chatId, int messageId) {
+        EditMessageText message = EditMessageText
+                .builder()
                 .chatId(chatId)
-                .messageId(previousMessageId)
+                .messageId(messageId)
+                .text(text)
+                .replyMarkup(markup)
                 .build();
         try {
-            telegramClient.execute(deleteMessage);
+            telegramClient.execute(message);
         } catch (TelegramApiException e) {
-            log.error("Exception while deleting message, chatId={}, messageId={}", chatId, previousMessageId, e);
+            log.error("Exception while editing message, chatId={}, messageId={}", chatId, messageId, e);
         }
     }
 

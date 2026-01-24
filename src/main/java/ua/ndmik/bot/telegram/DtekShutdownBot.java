@@ -43,11 +43,6 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
         }
 
         if (update.hasCallbackQuery()) {
-            String chatId = String.valueOf(update.getCallbackQuery().getMessage().getChatId());
-            Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
-            telegramService.setPreviousMessageId(messageId);
-            //TODO: remove animation if possible
-            telegramService.cleanUpOldMessage(chatId);
             handleCallback(update);
         }
     }
