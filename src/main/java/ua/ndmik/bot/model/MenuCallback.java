@@ -8,5 +8,6 @@ public enum MenuCallback {
     REGION,
     NOTIFICATION_CLICK,
     GROUP_CLICK,
-    GROUP_BACK
+    GROUP_DONE,
+    GROUP_SELECTION
 }

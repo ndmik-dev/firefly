@@ -5,11 +5,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ua.ndmik.bot.service.TelegramService;
 
 @Component
-public class GroupBackHandler implements CallbackHandler {
+public class GroupDoneHandler implements CallbackHandler {
 
     private final TelegramService telegramService;
 
-    public GroupBackHandler(TelegramService telegramService) {
+    public GroupDoneHandler(TelegramService telegramService) {
         this.telegramService = telegramService;
     }
 

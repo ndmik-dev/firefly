@@ -12,7 +12,7 @@ import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
 
-import static ua.ndmik.bot.model.MenuCallback.GROUP_BACK;
+import static ua.ndmik.bot.model.MenuCallback.GROUP_DONE;
 import static ua.ndmik.bot.model.MenuCallback.GROUP_CLICK;
 
 @Component
@@ -46,7 +46,7 @@ public class RegionHandler implements CallbackHandler {
                 )
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
-        rows.add(new InlineKeyboardRow(List.of(telegramService.button("Назад", GROUP_BACK.name()))));
+        rows.add(new InlineKeyboardRow(List.of(telegramService.button("✅ Готово", GROUP_DONE.name()))));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
         telegramService.sendMenu(update, "Виберіть групу", menu);
     }

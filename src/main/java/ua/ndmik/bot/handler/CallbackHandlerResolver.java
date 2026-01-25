@@ -14,15 +14,17 @@ public class CallbackHandlerResolver {
     public CallbackHandlerResolver(DefaultHandler defaultHandler,
                                    RegionHandler regionHandler,
                                    GroupClickHandler groupClickHandler,
-                                   GroupBackHandler groupBackHandler,
-                                   NotificationsClickHandler notificationsClickHandler) {
+                                   GroupDoneHandler groupDoneHandler,
+                                   NotificationsClickHandler notificationsClickHandler,
+                                   GroupSelectionHandler groupSelectionHandler) {
 
         this.handlers = new HashMap<>();
         handlers.put(MenuCallback.REGION, regionHandler);
         handlers.put(MenuCallback.KYIV, defaultHandler);
         handlers.put(MenuCallback.NOTIFICATION_CLICK, notificationsClickHandler);
         handlers.put(MenuCallback.GROUP_CLICK, groupClickHandler);
-        handlers.put(MenuCallback.GROUP_BACK, groupBackHandler);
+        handlers.put(MenuCallback.GROUP_DONE, groupDoneHandler);
+        handlers.put(MenuCallback.GROUP_SELECTION, groupSelectionHandler);
     }
 
     public CallbackHandler getHandler(MenuCallback callback) {

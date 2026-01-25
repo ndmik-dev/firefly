@@ -1,0 +1,33 @@
+package ua.ndmik.bot.handler;
+
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import ua.ndmik.bot.service.TelegramService;
+
+import java.util.List;
+
+import static ua.ndmik.bot.model.MenuCallback.KYIV;
+import static ua.ndmik.bot.model.MenuCallback.REGION;
+
+@Component
+public class GroupSelectionHandler implements CallbackHandler {
+
+    private final TelegramService telegramService;
+
+    public GroupSelectionHandler(TelegramService telegramService) {
+        this.telegramService = telegramService;
+    }
+
+    @Override
+    public void handle(Update update) {
+        InlineKeyboardRow regions = new InlineKeyboardRow(
+                List.of(
+                        telegramService.button("Київ", KYIV.name()),
+                        telegramService.button("Київщина", REGION.name())
+                ));
+        InlineKeyboardMarkup menu = telegramService.menu(List.of(regions));
+        telegramService.sendMenu(update, "Оберіть групу відключень", menu);
+    }
+}

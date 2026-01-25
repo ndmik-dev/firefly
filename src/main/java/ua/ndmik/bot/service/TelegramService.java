@@ -85,14 +85,13 @@ public class TelegramService {
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseGet(() -> createNewUser(chatId));
 
-        InlineKeyboardRow regions = new InlineKeyboardRow(
-                List.of(
-                        button("Київ", KYIV.name()),
-                        button("Київщина", REGION.name())
-                ));
+        String groupText = user.getGroupId() != null
+                ? "🧩 Змінити групу"
+                : "🧩 Обрати групу";
+        InlineKeyboardRow regions = new InlineKeyboardRow(List.of(button(groupText, GROUP_SELECTION.name())));
         String notificationText = user.isNotificationEnabled()
-                ? "Вимкнути сповіщення"
-                : "Увімкнути сповіщення";
+                ? "🔕 Вимкнути сповіщення"
+                : "🔔 Увімкнути сповіщення";
         InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
                 button(notificationText, NOTIFICATION_CLICK.name())
         ));
