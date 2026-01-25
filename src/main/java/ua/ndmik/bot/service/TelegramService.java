@@ -1,6 +1,7 @@
 package ua.ndmik.bot.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -28,20 +29,61 @@ public class TelegramService {
 
     private final TelegramClient telegramClient;
     private final UserSettingsRepository userRepository;
+    private final MessageFormatter messageFormatter;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
-                           UserSettingsRepository userRepository) {
+                           UserSettingsRepository userRepository,
+                           MessageFormatter messageFormatter) {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.userRepository = userRepository;
+        this.messageFormatter = messageFormatter;
+    }
+
+    public void sendGreeting(Update update) {
+        String greeting = """
+                ⚡️ DTEK Shutdowns Bot
+                
+                Привіт! Я надішлю тобі графіки відключень і попереджу, якщо щось змінилось.
+                
+                1) Обери свою групу 🧩
+                2) Увімкни сповіщення 🔔
+                3) Дивись графік на сьогодні/завтра 📅
+                """;
+        sendMainMenu(update, greeting);
     }
 
     public void sendMainMenu(Update update) {
+        String userInfo = """
+                🏠 Меню
+                
+                🧩 Група: %s
+                🔔 Сповіщення: %s
+                
+                Що показати?
+                """;
         long chatId = update.getMessage() != null
                 ? update.getMessage().getChatId()
                 : update.getCallbackQuery().getMessage().getChatId();
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseGet(() -> createNewUser(chatId));
-//        boolean needToCreate = update.getMessage() != null && userOpt.isEmpty();
+
+        String groupId = user.getGroupId();
+        String groupInfo = Strings.isNotEmpty(groupId)
+                ? groupId
+                : "Оберіть групу відключень нижче";
+        String notificationInfo = user.isNotificationEnabled()
+                ? "✅ Увімкнено"
+                : "❌ Вимкнено";
+
+        sendMainMenu(update, String.format(userInfo, groupInfo, notificationInfo));
+    }
+
+    public void sendMainMenu(Update update, String text) {
+        long chatId = update.getMessage() != null
+                ? update.getMessage().getChatId()
+                : update.getCallbackQuery().getMessage().getChatId();
+        UserSettings user = userRepository.findByChatId(chatId)
+                .orElseGet(() -> createNewUser(chatId));
 
         InlineKeyboardRow regions = new InlineKeyboardRow(
                 List.of(
@@ -55,21 +97,7 @@ public class TelegramService {
                 button(notificationText, NOTIFICATION_CLICK.name())
         ));
         InlineKeyboardMarkup menu = menu(List.of(regions, notifications));
-        sendMenu(update, "Вітаю, оберіть дію", menu);
-    }
-
-    public void sendMessage(String text, InlineKeyboardMarkup markup, long chatId) {
-        SendMessage message = SendMessage
-                .builder()
-                .text(text)
-                .chatId(chatId)
-                .replyMarkup(markup)
-                .build();
-        try {
-            telegramClient.execute(message);
-        } catch (TelegramApiException e) {
-            log.error("Exception while sending message, chatId={}", chatId, e);
-        }
+        sendMenu(update, text, menu);
     }
 
     public void sendMenu(Update update, String text, InlineKeyboardMarkup markup) {
@@ -85,18 +113,17 @@ public class TelegramService {
         }
     }
 
-    private void editMessage(String text, InlineKeyboardMarkup markup, long chatId, int messageId) {
-        EditMessageText message = EditMessageText
+    public void sendMessage(String text, InlineKeyboardMarkup markup, long chatId) {
+        SendMessage message = SendMessage
                 .builder()
-                .chatId(chatId)
-                .messageId(messageId)
                 .text(text)
+                .chatId(chatId)
                 .replyMarkup(markup)
                 .build();
         try {
             telegramClient.execute(message);
         } catch (TelegramApiException e) {
-            log.error("Exception while editing message, chatId={}, messageId={}", chatId, messageId, e);
+            log.error("Exception while sending message, chatId={}", chatId, e);
         }
     }
 
@@ -129,5 +156,20 @@ public class TelegramService {
                 .chatId(chatId)
                 .isNotificationEnabled(true)
                 .build());
+    }
+
+    private void editMessage(String text, InlineKeyboardMarkup markup, long chatId, int messageId) {
+        EditMessageText message = EditMessageText
+                .builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .text(text)
+                .replyMarkup(markup)
+                .build();
+        try {
+            telegramClient.execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Exception while editing message, chatId={}, messageId={}", chatId, messageId, e);
+        }
     }
 }

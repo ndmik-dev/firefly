@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Service
-public class ShutdownTelegramFormatter {
+public class MessageFormatter {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     //TODO: create methods for different messages to notify about shutdowns

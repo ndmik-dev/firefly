@@ -12,7 +12,8 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
 
     @NonNull List<Schedule> findAll();
 
-    List<Schedule> findAllByNeedToNotifyTrue();
+    @Query("select s.groupId from Schedule s where s.needToNotify = true")
+    List<String> findAllGroupIdsByNeedToNotifyTrue();
 
     List<Schedule> findAllByGroupId(String groupId);
 

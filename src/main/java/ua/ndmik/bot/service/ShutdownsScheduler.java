@@ -21,17 +21,20 @@ public class ShutdownsScheduler {
     private final ScheduleRepository scheduleRepository;
     private final UserSettingsRepository userRepository;
     private final ScheduleResponseConverter converter;
+    private final TelegramService telegramService;
 
     public ShutdownsScheduler(DtekClient dtekClient,
                               DtekShutdownsService dtekService,
                               ScheduleRepository scheduleRepository,
                               UserSettingsRepository userRepository,
-                              ScheduleResponseConverter converter) {
+                              ScheduleResponseConverter converter,
+                              TelegramService telegramService) {
         this.dtekClient = dtekClient;
         this.dtekService = dtekService;
         this.scheduleRepository = scheduleRepository;
         this.userRepository = userRepository;
         this.converter = converter;
+        this.telegramService = telegramService;
     }
 
     //TODO: add transactions
@@ -41,12 +44,14 @@ public class ShutdownsScheduler {
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
         compareAndUpdate(oldSchedules, newSchedules);
-        List<Schedule> updatedSchedules = scheduleRepository.findAllByNeedToNotifyTrue();
-        for (Schedule schedule : updatedSchedules) {
-            List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(schedule.getGroupId());
+        List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
+        for (String groupId : updatedGroupIds) {
+            List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
+            List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
             //TODO: sendMessages. Fix TODAY/TOMORROW problem
-            schedule.setNeedToNotify(Boolean.FALSE);
-            scheduleRepository.save(schedule);
+//            users.forEach(user -> telegramService.sendMessage());
+            schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
+            scheduleRepository.saveAll(schedules);
         }
     }
 

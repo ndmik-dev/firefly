@@ -50,7 +50,7 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     private void handleMessage(Update update) {
         String text = update.getMessage().getText().trim();
         if (text.equals("/start")) {
-            telegramService.sendMainMenu(update);
+            telegramService.sendGreeting(update);
         }
     }
 
