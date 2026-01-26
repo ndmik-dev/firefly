@@ -26,9 +26,9 @@ public class DtekTelegramBotApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
 //        bot.process();
-        System.out.println("First");
+        System.out.println("===== Init DB =====");
         scheduler.processShutdowns();
-        System.out.println("Second");
-        scheduler.processShutdowns();
+//        System.out.println("Second");
+//        scheduler.processShutdowns();
     }
 }

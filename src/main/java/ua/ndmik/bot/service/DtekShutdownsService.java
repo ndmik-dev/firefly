@@ -10,18 +10,40 @@ import ua.ndmik.bot.model.entity.Schedule;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
+import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
 
 @Service
 public class DtekShutdownsService {
 
     private final JsonMapper mapper;
+    private final MessageFormatter messageFormatter;
 
-    public DtekShutdownsService() {
+    public DtekShutdownsService(MessageFormatter messageFormatter) {
         this.mapper = new JsonMapper();
+        this.messageFormatter = messageFormatter;
     }
 
-    public Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
+    public String getShutdownsMessage(List<Schedule> schedules) {
+        Schedule todaySchedule = schedules.stream()
+                .filter(schedule -> TODAY.equals(schedule.getScheduleDay()))
+                .findFirst()
+                .get();
+        Schedule tomorrowSchedule = schedules.stream()
+                .filter(schedule -> TOMORROW.equals(schedule.getScheduleDay()))
+                .findFirst()
+                .get();
+
+        Map<LocalTime, LocalTime> todayShutdowns = getShutdowns(todaySchedule);
+        Map<LocalTime, LocalTime> tomorrowShutdowns = getShutdowns(tomorrowSchedule);
+
+        return messageFormatter.format(todayShutdowns, tomorrowShutdowns);
+    }
+
+    private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
         Map<String, String> scheduleMap = mapper.readValue(schedule.getSchedule(), new TypeReference<>() {});
         if (isScheduleEmpty(scheduleMap)) {
             return Map.of();

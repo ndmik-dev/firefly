@@ -1,5 +1,6 @@
 package ua.ndmik.bot.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ua.ndmik.bot.client.DtekClient;
@@ -10,10 +11,17 @@ import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
+import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
 
 @Service
+@Slf4j
 public class ShutdownsScheduler {
 
     private final DtekClient dtekClient;
@@ -22,24 +30,28 @@ public class ShutdownsScheduler {
     private final UserSettingsRepository userRepository;
     private final ScheduleResponseConverter converter;
     private final TelegramService telegramService;
+    private final MessageFormatter messageFormatter;
 
     public ShutdownsScheduler(DtekClient dtekClient,
                               DtekShutdownsService dtekService,
                               ScheduleRepository scheduleRepository,
                               UserSettingsRepository userRepository,
                               ScheduleResponseConverter converter,
-                              TelegramService telegramService) {
+                              TelegramService telegramService,
+                              MessageFormatter messageFormatter) {
         this.dtekClient = dtekClient;
         this.dtekService = dtekService;
         this.scheduleRepository = scheduleRepository;
         this.userRepository = userRepository;
         this.converter = converter;
         this.telegramService = telegramService;
+        this.messageFormatter = messageFormatter;
     }
 
     //TODO: add transactions
-    @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}")
+    @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}", timeUnit = TimeUnit.MINUTES)
     public void processShutdowns() {
+        log.info("Running scheduler");
         ScheduleResponse scheduleResponse = dtekClient.getShutdownsSchedule();
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
@@ -49,7 +61,8 @@ public class ShutdownsScheduler {
             List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
             List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
             //TODO: sendMessages. Fix TODAY/TOMORROW problem
-//            users.forEach(user -> telegramService.sendMessage());
+            String message = dtekService.getShutdownsMessage(schedules);
+            users.forEach(user -> telegramService.sendMessage(message, null, user.getChatId()));
             schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
             scheduleRepository.saveAll(schedules);
         }
