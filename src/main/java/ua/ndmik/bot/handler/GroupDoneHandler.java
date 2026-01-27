@@ -37,7 +37,6 @@ public class GroupDoneHandler implements CallbackHandler {
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
         String message = dtekService.getShutdownsMessage(schedules);
         //TODO: fix message is displayed after menu
-        telegramService.sendMessage(message, null, chatId);
-        telegramService.sendMainMenu(update);
+        telegramService.sendMessage(update, message);
     }
 }

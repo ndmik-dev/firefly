@@ -49,11 +49,11 @@ public class TelegramService {
                 2) Увімкни сповіщення 🔔
                 3) Дивись графік на сьогодні/завтра 📅
                 """;
-        sendMainMenu(update, greeting);
+        sendMessage(update, greeting);
     }
 
-    public void sendMainMenu(Update update) {
-        String userInfo = """
+    public void sendMessage(Update update) {
+        String menuTemplate = """
                 🏠 Меню
                 
                 🧩 Група: %s
@@ -61,45 +61,18 @@ public class TelegramService {
                 
                 Що показати?
                 """;
-        long chatId = update.getMessage() != null
-                ? update.getMessage().getChatId()
-                : update.getCallbackQuery().getMessage().getChatId();
-        UserSettings user = userRepository.findByChatId(chatId)
-                .orElseGet(() -> createNewUser(chatId));
-
-        String groupId = user.getGroupId();
-        String groupInfo = Strings.isNotEmpty(groupId)
-                ? groupId
-                : "Оберіть групу відключень нижче";
-        String notificationInfo = user.isNotificationEnabled()
-                ? "✅ Увімкнено"
-                : "❌ Вимкнено";
-
-        sendMainMenu(update, String.format(userInfo, groupInfo, notificationInfo));
+        UserSettings user = getOrCreateUser(update);
+        String groupInfo = formatGroupInfo(user.getGroupId());
+        String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
+        sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo));
     }
 
-    public void sendMainMenu(Update update, String text) {
-        long chatId = update.getMessage() != null
-                ? update.getMessage().getChatId()
-                : update.getCallbackQuery().getMessage().getChatId();
-        UserSettings user = userRepository.findByChatId(chatId)
-                .orElseGet(() -> createNewUser(chatId));
-
-        String groupText = user.getGroupId() != null
-                ? "🧩 Змінити групу"
-                : "🧩 Обрати групу";
-        InlineKeyboardRow regions = new InlineKeyboardRow(List.of(button(groupText, GROUP_SELECTION.name())));
-        String notificationText = user.isNotificationEnabled()
-                ? "🔕 Вимкнути сповіщення"
-                : "🔔 Увімкнути сповіщення";
-        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
-                button(notificationText, NOTIFICATION_CLICK.name())
-        ));
-        InlineKeyboardMarkup menu = menu(List.of(regions, notifications));
-        sendMenu(update, text, menu);
+    public void sendMessage(Update update, String text) {
+        InlineKeyboardMarkup menu = buildMainMenuMarkup(getOrCreateUser(update));
+        sendMessage(update, text, menu);
     }
 
-    public void sendMenu(Update update, String text, InlineKeyboardMarkup markup) {
+    public void sendMessage(Update update, String text, InlineKeyboardMarkup markup) {
         if (update.getCallbackQuery() != null && update.getCallbackQuery().getMessage() != null) {
             long chatId = update.getCallbackQuery().getMessage().getChatId();
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
@@ -155,6 +128,44 @@ public class TelegramService {
                 .chatId(chatId)
                 .isNotificationEnabled(true)
                 .build());
+    }
+
+    private UserSettings getOrCreateUser(Update update) {
+        long chatId = update.getMessage() != null
+                ? update.getMessage().getChatId()
+                : update.getCallbackQuery().getMessage().getChatId();
+        return userRepository.findByChatId(chatId)
+                .orElseGet(() -> createNewUser(chatId));
+    }
+
+    private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
+        String groupText = user.getGroupId() != null
+                ? "🧩 Змінити групу"
+                : "🧩 Обрати групу";
+        InlineKeyboardRow regions = new InlineKeyboardRow(List.of(
+                button(groupText, GROUP_SELECTION.name())
+        ));
+
+        String notificationText = user.isNotificationEnabled()
+                ? "🔕 Вимкнути сповіщення"
+                : "🔔 Увімкнути сповіщення";
+        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
+                button(notificationText, NOTIFICATION_CLICK.name())
+        ));
+
+        return menu(List.of(regions, notifications));
+    }
+
+    private String formatGroupInfo(String groupId) {
+        return Strings.isNotEmpty(groupId)
+                ? groupId
+                : "Оберіть групу відключень нижче";
+    }
+
+    private String formatNotificationInfo(boolean isEnabled) {
+        return isEnabled
+                ? "✅ Увімкнено"
+                : "❌ Вимкнено";
     }
 
     private void editMessage(String text, InlineKeyboardMarkup markup, long chatId, int messageId) {

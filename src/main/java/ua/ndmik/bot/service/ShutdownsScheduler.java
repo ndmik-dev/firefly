@@ -63,7 +63,7 @@ public class ShutdownsScheduler {
             //TODO: sendMessages. Fix TODAY/TOMORROW problem
             String message = dtekService.getShutdownsMessage(schedules);
             users.forEach(user -> telegramService.sendMessage(message, null, user.getChatId()));
-            schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
+//            schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
             scheduleRepository.saveAll(schedules);
         }
     }
