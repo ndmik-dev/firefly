@@ -8,8 +8,7 @@ import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
 
-import static ua.ndmik.bot.model.MenuCallback.KYIV;
-import static ua.ndmik.bot.model.MenuCallback.REGION;
+import static ua.ndmik.bot.model.MenuCallback.*;
 
 @Component
 public class GroupSelectionHandler implements CallbackHandler {
@@ -27,7 +26,10 @@ public class GroupSelectionHandler implements CallbackHandler {
                         telegramService.button("Київ", KYIV.name()),
                         telegramService.button("Київщина", REGION.name())
                 ));
-        InlineKeyboardMarkup menu = telegramService.menu(List.of(regions));
+        InlineKeyboardRow back = new InlineKeyboardRow(
+                List.of(telegramService.button("Назад", REGIONS_BACK.name()))
+        );
+        InlineKeyboardMarkup menu = telegramService.menu(List.of(regions, back));
         telegramService.sendMessage(update, "Оберіть групу відключень", menu);
     }
 }

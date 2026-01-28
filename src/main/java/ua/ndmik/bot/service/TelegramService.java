@@ -13,7 +13,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
+import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
 import java.util.List;
@@ -21,7 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static ua.ndmik.bot.model.MenuCallback.*;
+import static ua.ndmik.bot.model.MenuCallback.GROUP_SELECTION;
+import static ua.ndmik.bot.model.MenuCallback.NOTIFICATION_CLICK;
 
 @Service
 @Slf4j
@@ -29,14 +32,17 @@ public class TelegramService {
 
     private final TelegramClient telegramClient;
     private final UserSettingsRepository userRepository;
-    private final MessageFormatter messageFormatter;
+    private final ScheduleRepository scheduleRepository;
+    private final DtekShutdownsService dtekService;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
                            UserSettingsRepository userRepository,
-                           MessageFormatter messageFormatter) {
+                           ScheduleRepository scheduleRepository,
+                           DtekShutdownsService dtekService) {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.userRepository = userRepository;
-        this.messageFormatter = messageFormatter;
+        this.scheduleRepository = scheduleRepository;
+        this.dtekService = dtekService;
     }
 
     public void sendGreeting(Update update) {
@@ -45,26 +51,27 @@ public class TelegramService {
                 
                 Привіт! Я надішлю тобі графіки відключень і попереджу, якщо щось змінилось.
                 
-                1) Обери свою групу 🧩
-                2) Увімкни сповіщення 🔔
-                3) Дивись графік на сьогодні/завтра 📅
+                Обери свою групу 🧩 та дивись графік на сьогодні/завтра 📅
                 """;
         sendMessage(update, greeting);
     }
 
     public void sendMessage(Update update) {
+        //TODO: add title instead of menu text
         String menuTemplate = """
                 🏠 Меню
                 
                 🧩 Група: %s
                 🔔 Сповіщення: %s
                 
-                Що показати?
+                %s
                 """;
         UserSettings user = getOrCreateUser(update);
         String groupInfo = formatGroupInfo(user.getGroupId());
+        List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
+        String shutdowns = dtekService.getShutdownsMessage(schedules);
         String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
-        sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo));
+        sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo, shutdowns));
     }
 
     public void sendMessage(Update update, String text) {
@@ -139,21 +146,23 @@ public class TelegramService {
     }
 
     private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
-        String groupText = user.getGroupId() != null
-                ? "🧩 Змінити групу"
-                : "🧩 Обрати групу";
-        InlineKeyboardRow regions = new InlineKeyboardRow(List.of(
-                button(groupText, GROUP_SELECTION.name())
-        ));
-
-        String notificationText = user.isNotificationEnabled()
-                ? "🔕 Вимкнути сповіщення"
-                : "🔔 Увімкнути сповіщення";
-        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
-                button(notificationText, NOTIFICATION_CLICK.name())
-        ));
-
-        return menu(List.of(regions, notifications));
+        if (user.getGroupId() != null) {
+            InlineKeyboardRow group = new InlineKeyboardRow(List.of(
+                    button("🧩 Змінити групу", GROUP_SELECTION.name())
+            ));
+            String notificationText = user.isNotificationEnabled()
+                    ? "🔕 Вимкнути сповіщення"
+                    : "🔔 Увімкнути сповіщення";
+            InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
+                    button(notificationText, NOTIFICATION_CLICK.name())
+            ));
+            return menu(List.of(group, notifications));
+        } else {
+            InlineKeyboardRow group = new InlineKeyboardRow(List.of(
+                    button("🧩 Обрати групу", GROUP_SELECTION.name())
+            ));
+            return menu(List.of(group));
+        }
     }
 
     private String formatGroupInfo(String groupId) {

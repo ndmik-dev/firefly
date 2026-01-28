@@ -25,8 +25,7 @@ public class NotificationsClickHandler implements CallbackHandler {
                 .ifPresent(user -> {
                     user.setNotificationEnabled(!user.isNotificationEnabled());
                     userRepository.save(user);
-                    Message message = (Message) update.getCallbackQuery().getMessage();
-                    telegramService.sendMessage(update, message.getText());
+                    telegramService.sendMessage(update);
                 });
     }
 }
