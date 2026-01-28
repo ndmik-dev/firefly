@@ -17,5 +17,7 @@ public class UserSettings {
 
     private String groupId;
 
+    private String tmpGroupId;
+
     private boolean isNotificationEnabled;
 }

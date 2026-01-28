@@ -12,8 +12,7 @@ import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
 
-import static ua.ndmik.bot.model.MenuCallback.GROUP_DONE;
-import static ua.ndmik.bot.model.MenuCallback.GROUP_CLICK;
+import static ua.ndmik.bot.model.MenuCallback.*;
 
 @Component
 public class RegionHandler implements CallbackHandler {
@@ -46,9 +45,31 @@ public class RegionHandler implements CallbackHandler {
                 )
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
-        rows.add(new InlineKeyboardRow(List.of(telegramService.button("✅ Готово", GROUP_DONE.name()))));
+        rows.add(new InlineKeyboardRow(List.of(
+                telegramService.button("Назад", GROUP_BACK.name()),
+                telegramService.button("✅ Готово", GROUP_DONE.name()))
+        ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
         telegramService.sendMessage(update, "Виберіть групу", menu);
+    }
+
+    public void reprint(Update update, String userGroupId, String text) {
+        List<String> groupIds = scheduleRepository.findDistinctGroupIds()
+                .stream()
+                .sorted()
+                .toList();
+        List<InlineKeyboardButton> buttons = groupIds.stream()
+                .map(groupId -> telegramService.button(
+                        formatButton(groupId, userGroupId), GROUP_CLICK.name() + ":" + groupId)
+                )
+                .toList();
+        List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
+        rows.add(new InlineKeyboardRow(List.of(
+                telegramService.button("Назад", GROUP_BACK.name()),
+                telegramService.button("✅ Готово", GROUP_DONE.name()))
+        ));
+        InlineKeyboardMarkup menu = telegramService.menu(rows);
+        telegramService.sendMessage(update, text, menu);
     }
 
     //TODO: move to formatter

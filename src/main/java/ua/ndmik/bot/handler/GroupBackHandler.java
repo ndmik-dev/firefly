@@ -6,30 +6,24 @@ import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
 @Component
-public class GroupClickHandler implements CallbackHandler {
+public class GroupBackHandler implements CallbackHandler {
 
+    private final GroupSelectionHandler groupSelectionHandler;
     private final UserSettingsRepository userRepository;
-    private final RegionHandler regionHandler;
 
-    public GroupClickHandler(UserSettingsRepository userRepository,
-                             RegionHandler regionHandler) {
+    public GroupBackHandler(GroupSelectionHandler groupSelectionHandler,
+                            UserSettingsRepository userRepository) {
+        this.groupSelectionHandler = groupSelectionHandler;
         this.userRepository = userRepository;
-        this.regionHandler = regionHandler;
     }
 
     @Override
     public void handle(Update update) {
         long chatId = getChatId(update);
-        String data = update.getCallbackQuery().getData();
-        String groupId = extractGroupIdFromCallbackData(data);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
-        user.setTmpGroupId(groupId);
+        user.setTmpGroupId(null);
         userRepository.save(user);
-        regionHandler.reprint(update, groupId, "Натисність Готово");
-    }
-
-    private String extractGroupIdFromCallbackData(String data) {
-        return data.substring(data.indexOf(':') + 1);
+        groupSelectionHandler.handle(update);
     }
 }

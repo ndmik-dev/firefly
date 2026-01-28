@@ -8,6 +8,7 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
@@ -59,7 +60,7 @@ public class TelegramService {
     public void sendMessage(Update update) {
         //TODO: add title instead of menu text
         String menuTemplate = """
-                🏠 Меню
+                🏠 Графік відключень
                 
                 🧩 Група: %s
                 🔔 Сповіщення: %s
@@ -72,6 +73,25 @@ public class TelegramService {
         String shutdowns = dtekService.getShutdownsMessage(schedules);
         String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
         sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo, shutdowns));
+    }
+
+    public void sendUpdate(long chatId) {
+        String menuTemplate = """
+                🏠 Графік оновився
+                
+                🧩 Група: %s
+                🔔 Сповіщення: %s
+                
+                %s
+                """;
+        UserSettings user = userRepository.findByChatId(chatId)
+                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        String groupInfo = formatGroupInfo(user.getGroupId());
+        List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
+        String shutdowns = dtekService.getShutdownsMessage(schedules);
+        String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
+        String message = String.format(menuTemplate, groupInfo, notificationInfo, shutdowns);
+        sendMessage(message, buildMainMenuMarkup(user), chatId);
     }
 
     public void sendMessage(Update update, String text) {
