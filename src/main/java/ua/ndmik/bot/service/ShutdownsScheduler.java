@@ -70,7 +70,7 @@ public class ShutdownsScheduler {
         //TODO: sendMessages. Fix TODAY/TOMORROW problem
         users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
-        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
+//        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
     }
 

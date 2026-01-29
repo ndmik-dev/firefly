@@ -35,7 +35,6 @@ dependencies {
     implementation 'com.microsoft.playwright:playwright:1.57.0'
     implementation 'org.telegram:telegrambots-springboot-longpolling-starter:9.2.1'
     implementation 'org.telegram:telegrambots-client:9.2.1'
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
