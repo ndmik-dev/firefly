@@ -68,10 +68,13 @@ public class TelegramService {
                 %s
                 """;
         UserSettings user = getOrCreateUser(update);
-        String groupInfo = formatGroupInfo(user.getGroupId());
-        List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
-        String shutdowns = dtekService.getShutdownsMessage(schedules);
         String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
+        String groupInfo = formatGroupInfo(user.getGroupId());
+        String shutdowns = "";
+        if (user.getGroupId() != null) {
+            List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
+            shutdowns = dtekService.getShutdownsMessage(schedules);
+        }
         sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo, shutdowns));
     }
 

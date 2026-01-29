@@ -32,6 +32,6 @@ public class CallbackHandlerResolver {
     }
 
     public CallbackHandler getHandler(MenuCallback callback) {
-        return handlers.get(callback);
+        return handlers.getOrDefault(callback, new DefaultHandler());
     }
 }

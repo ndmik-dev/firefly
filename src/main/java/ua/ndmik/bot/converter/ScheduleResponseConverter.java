@@ -66,6 +66,9 @@ public class ScheduleResponseConverter {
     }
 
     private LocalDateTime parseLastUpdate(String lastUpdate) {
+        if (lastUpdate == null) {
+            return LocalDateTime.now();
+        }
         return LocalDateTime.parse(lastUpdate.trim(), FORMATTER);
     }
 

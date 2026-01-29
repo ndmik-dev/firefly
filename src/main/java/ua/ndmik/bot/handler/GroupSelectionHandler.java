@@ -23,7 +23,7 @@ public class GroupSelectionHandler implements CallbackHandler {
     public void handle(Update update) {
         InlineKeyboardRow regions = new InlineKeyboardRow(
                 List.of(
-                        telegramService.button("Київ", KYIV.name()),
+                        telegramService.button("Київ (поки не робе)", KYIV.name()),
                         telegramService.button("Київщина", REGION.name())
                 ));
         InlineKeyboardRow back = new InlineKeyboardRow(

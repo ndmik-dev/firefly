@@ -43,6 +43,7 @@ public class GroupDoneHandler implements CallbackHandler {
         String groupId = user.getTmpGroupId();
         if (groupId == null) {
             regionHandler.reprint(update, null, "! Ви не обрали групу відключень");
+            return;
         }
         user.setGroupId(groupId);
         userRepository.save(user);
