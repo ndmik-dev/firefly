@@ -3,6 +3,7 @@ package ua.ndmik.bot.service;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,32 +14,43 @@ public class MessageFormatter {
 
     //TODO: refactor class
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
     private static final int MINUTES_PER_DAY = 24 * 60;
     //TODO: create methods for different messages to notify about shutdowns
     public String format(Map<LocalTime, LocalTime> todayShutdowns,
-                         Map<LocalTime, LocalTime> tomorrowShutdowns) {
+                         Map<LocalTime, LocalTime> tomorrowShutdowns,
+                         LocalDate today) {
         StringBuilder sb = new StringBuilder();
-        sb.append("💡 Світло буде\n");
-        sb.append("🕒 Час місцевий\n\n");
-        sb.append(formatDay("Сьогодні", todayShutdowns));
+        sb.append("💡 <b>Світло буде</b>\n\n");
+        sb.append(formatDay("Сьогодні", today, todayShutdowns));
         sb.append('\n');
-        sb.append(formatDay("Завтра", tomorrowShutdowns));
+        sb.append(formatDay("Завтра", today.plusDays(1), tomorrowShutdowns));
         return sb.toString().trim();
     }
 
-    private String formatDay(String label, Map<LocalTime, LocalTime> shutdowns) {
+    private String formatDay(String label, LocalDate date, Map<LocalTime, LocalTime> shutdowns) {
         StringBuilder sb = new StringBuilder();
-        sb.append("📅 ").append(label).append('\n');
+        sb.append("📅 <b>")
+                .append(label)
+                .append("</b>: ")
+                .append("<b>")
+                .append(date.format(DATE_FORMATTER))
+                .append("</b>")
+                .append('\n');
         List<LightInterval> intervals = toLightIntervals(shutdowns);
         if (intervals.isEmpty()) {
-            sb.append("🚫 Графік ще не сформований\n");
+            sb.append("⚠️ <i>Немає даних</i>\n");
             return sb.toString();
         }
         for (LightInterval interval : intervals) {
             sb.append("✅ ")
+                    .append("<b>")
                     .append(formatMinutes(interval.startMinutes, false))
-                    .append(" — ")
+                    .append("</b>")
+                    .append("–")
+                    .append("<b>")
                     .append(formatMinutes(interval.endMinutes, true))
+                    .append("</b>")
                     .append('\n');
         }
         return sb.toString();

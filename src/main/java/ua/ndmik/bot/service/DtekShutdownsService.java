@@ -40,7 +40,7 @@ public class DtekShutdownsService {
         Map<LocalTime, LocalTime> todayShutdowns = getShutdowns(todaySchedule);
         Map<LocalTime, LocalTime> tomorrowShutdowns = getShutdowns(tomorrowSchedule);
 
-        return messageFormatter.format(todayShutdowns, tomorrowShutdowns);
+        return messageFormatter.format(todayShutdowns, tomorrowShutdowns, java.time.LocalDate.now());
     }
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {

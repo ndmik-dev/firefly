@@ -5,6 +5,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -48,11 +49,9 @@ public class TelegramService {
 
     public void sendGreeting(Update update) {
         String greeting = """
-                ⚡️ DTEK Shutdowns Bot
+                ⚡️ DTEK
                 
-                Привіт! Я надішлю тобі графіки відключень і попереджу, якщо щось змінилось.
-                
-                Обери свою групу 🧩 та дивись графік на сьогодні/завтра 📅
+                Оберіть групу та керуйте сповіщеннями.
                 """;
         sendMessage(update, greeting);
     }
@@ -60,11 +59,9 @@ public class TelegramService {
     public void sendMessage(Update update) {
         //TODO: add title instead of menu text
         String menuTemplate = """
-                🏠 Графік відключень
-                
                 🧩 Група: %s
                 🔔 Сповіщення: %s
-                
+
                 %s
                 """;
         UserSettings user = getOrCreateUser(update);
@@ -80,11 +77,11 @@ public class TelegramService {
 
     public void sendUpdate(long chatId) {
         String menuTemplate = """
-                🏠 Графік оновився
-                
+                ℹ️ Оновлено
+
                 🧩 Група: %s
                 🔔 Сповіщення: %s
-                
+
                 %s
                 """;
         UserSettings user = userRepository.findByChatId(chatId)
@@ -121,6 +118,7 @@ public class TelegramService {
                 .text(text)
                 .chatId(chatId)
                 .replyMarkup(markup)
+                .parseMode(ParseMode.HTML)
                 .build();
         try {
             telegramClient.execute(message);
@@ -216,6 +214,7 @@ public class TelegramService {
                 .messageId(messageId)
                 .text(text)
                 .replyMarkup(markup)
+                .parseMode(ParseMode.HTML)
                 .build();
         try {
             telegramClient.execute(message);
