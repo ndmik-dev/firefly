@@ -169,23 +169,32 @@ public class TelegramService {
     }
 
     private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
-        if (user.getGroupId() != null) {
-            InlineKeyboardRow group = new InlineKeyboardRow(List.of(
-                    button("🧩 Змінити групу", GROUP_SELECTION.name())
-            ));
-            String notificationText = user.isNotificationEnabled()
-                    ? "🔕 Вимкнути сповіщення"
-                    : "🔔 Увімкнути сповіщення";
-            InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
-                    button(notificationText, NOTIFICATION_CLICK.name())
-            ));
-            return menu(List.of(group, notifications));
-        } else {
-            InlineKeyboardRow group = new InlineKeyboardRow(List.of(
-                    button("🧩 Обрати групу", GROUP_SELECTION.name())
-            ));
+        InlineKeyboardRow group = new InlineKeyboardRow(List.of(
+                button(groupButtonText(user), GROUP_SELECTION.name())
+        ));
+        if (user.getGroupId() == null) {
             return menu(List.of(group));
         }
+        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
+                button(notificationButtonText(user), NOTIFICATION_CLICK.name())
+        ));
+        return menu(List.of(group, notifications));
+    }
+
+    public InlineKeyboardRow backRow(String callback) {
+        return new InlineKeyboardRow(List.of(button("Назад", callback)));
+    }
+
+    private String groupButtonText(UserSettings user) {
+        return user.getGroupId() != null
+                ? "🧩 Змінити групу"
+                : "🧩 Обрати групу";
+    }
+
+    private String notificationButtonText(UserSettings user) {
+        return user.isNotificationEnabled()
+                ? "🔕 Вимкнути сповіщення"
+                : "🔔 Увімкнути сповіщення";
     }
 
     private String formatGroupInfo(String groupId) {

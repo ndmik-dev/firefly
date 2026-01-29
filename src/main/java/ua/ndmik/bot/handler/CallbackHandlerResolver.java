@@ -29,9 +29,10 @@ public class CallbackHandlerResolver {
         handlers.put(MenuCallback.GROUP_DONE, groupDoneHandler);
         handlers.put(MenuCallback.GROUP_BACK, groupBackHandler);
         handlers.put(MenuCallback.GROUP_SELECTION, groupSelectionHandler);
+        handlers.put(MenuCallback.DEFAULT, defaultHandler);
     }
 
     public CallbackHandler getHandler(MenuCallback callback) {
-        return handlers.getOrDefault(callback, new DefaultHandler());
+        return handlers.getOrDefault(callback, handlers.get(MenuCallback.DEFAULT));
     }
 }

@@ -11,5 +11,6 @@ public enum MenuCallback {
     GROUP_CLICK,
     GROUP_BACK,
     GROUP_DONE,
-    GROUP_SELECTION
+    GROUP_SELECTION,
+    DEFAULT
 }

@@ -26,9 +26,7 @@ public class GroupSelectionHandler implements CallbackHandler {
                         telegramService.button("Київ (поки не робе)", KYIV.name()),
                         telegramService.button("Київщина", REGION.name())
                 ));
-        InlineKeyboardRow back = new InlineKeyboardRow(
-                List.of(telegramService.button("Назад", REGIONS_BACK.name()))
-        );
+        InlineKeyboardRow back = telegramService.backRow(REGIONS_BACK.name());
         InlineKeyboardMarkup menu = telegramService.menu(List.of(regions, back));
         telegramService.sendMessage(update, "Оберіть групу відключень", menu);
     }

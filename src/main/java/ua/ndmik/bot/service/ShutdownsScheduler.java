@@ -58,14 +58,20 @@ public class ShutdownsScheduler {
         compareAndUpdate(oldSchedules, newSchedules);
         List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
         for (String groupId : updatedGroupIds) {
-            List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
-            List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
-            //TODO: sendMessages. Fix TODAY/TOMORROW problem
-//            String message = dtekService.getShutdownsMessage(schedules);
-            users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
-            schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
-            scheduleRepository.saveAll(schedules);
+            processGroupUpdate(groupId);
         }
+    }
+
+    private void processGroupUpdate(String groupId) {
+        List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
+        if (users.isEmpty()) {
+            return;
+        }
+        //TODO: sendMessages. Fix TODAY/TOMORROW problem
+        users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
+        List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
+        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
+        scheduleRepository.saveAll(schedules);
     }
 
     private void compareAndUpdate(List<Schedule> oldSchedules, List<Schedule> newSchedules) {
