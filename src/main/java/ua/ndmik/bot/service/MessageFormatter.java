@@ -35,11 +35,11 @@ public class MessageFormatter {
                 .append(date.format(DATE_FORMATTER))
                 .append("</b>")
                 .append('\n');
-        List<LightInterval> intervals = toLightIntervals(shutdowns);
-        if (intervals.isEmpty()) {
-            sb.append("⚠️ <i>Немає даних</i>\n");
+        if (shutdowns == null || shutdowns.isEmpty()) {
+            sb.append("⚠️ <i>Графік ще не створено</i>\n");
             return sb.toString();
         }
+        List<LightInterval> intervals = toLightIntervals(shutdowns);
         for (LightInterval interval : intervals) {
             sb.append("✅ ")
                     .append("<b>")
