@@ -16,6 +16,7 @@ import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalTime;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -48,6 +49,10 @@ public class ShutdownsScheduler {
 
     @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}", timeUnit = TimeUnit.MINUTES)
     public void processShutdowns() {
+        if (isBlockedWindow()) {
+            log.info("Scheduler skipped (blocked window 23:55-00:05)");
+            return;
+        }
         log.info("Running scheduler");
         ScheduleResponse scheduleResponse = dtekClient.getShutdownsSchedule();
         List<Schedule> oldSchedules = scheduleRepository.findAll();
@@ -88,5 +93,12 @@ public class ShutdownsScheduler {
                 .filter(schedule -> schedule.getScheduleDay().equals(newSchedule.getScheduleDay()))
                 .filter(schedule -> schedule.getGroupId().equals(newSchedule.getGroupId()))
                 .findFirst();
+    }
+
+    private boolean isBlockedWindow() {
+        LocalTime now = LocalTime.now();
+        LocalTime start = LocalTime.of(23, 55);
+        LocalTime end = LocalTime.of(0, 5);
+        return now.isAfter(start) || now.isBefore(end);
     }
 }
