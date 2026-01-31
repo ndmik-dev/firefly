@@ -3,6 +3,7 @@ package ua.ndmik.bot.scheduler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
 import ua.ndmik.bot.model.ScheduleResponse;
@@ -14,10 +15,13 @@ import ua.ndmik.bot.service.DtekShutdownsService;
 import ua.ndmik.bot.service.MessageFormatter;
 import ua.ndmik.bot.service.TelegramService;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import java.time.LocalTime;
 import java.util.concurrent.TimeUnit;
+
+import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
+import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
 
 @Service
 @Slf4j
@@ -62,6 +66,18 @@ public class ShutdownsScheduler {
         for (String groupId : updatedGroupIds) {
             processGroupUpdate(groupId);
         }
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * *")
+    public void rolloverSchedulesAtMidnight() {
+        log.info("Running daily schedule rollover");
+        scheduleRepository.deleteByScheduleDay(TODAY);
+        List<Schedule> tomorrowSchedules = scheduleRepository.findAllByScheduleDay(TOMORROW);
+        for (Schedule schedule : tomorrowSchedules) {
+            schedule.setScheduleDay(TODAY);
+        }
+        scheduleRepository.saveAll(tomorrowSchedules);
     }
 
     private void processGroupUpdate(String groupId) {

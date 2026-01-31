@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleId;
+import ua.ndmik.bot.model.entity.ScheduleDay;
 
 import java.util.List;
 
@@ -16,6 +17,10 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
     List<String> findAllGroupIdsByNeedToNotifyTrue();
 
     List<Schedule> findAllByGroupId(String groupId);
+
+    List<Schedule> findAllByScheduleDay(ScheduleDay scheduleDay);
+
+    void deleteByScheduleDay(ScheduleDay scheduleDay);
 
     @Query("select distinct s.groupId from Schedule s")
     List<String> findDistinctGroupIds();
