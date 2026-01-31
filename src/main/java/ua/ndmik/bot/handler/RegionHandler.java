@@ -72,7 +72,6 @@ public class RegionHandler implements CallbackHandler {
         telegramService.sendMessage(update, text, menu);
     }
 
-    //TODO: move to formatter
     private String formatButton(String groupId, String userGroupId) {
         return groupId.equals(userGroupId)
                 ? "✅ " + groupId

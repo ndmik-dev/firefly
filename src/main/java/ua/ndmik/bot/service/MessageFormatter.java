@@ -12,11 +12,9 @@ import java.util.Map;
 @Service
 public class MessageFormatter {
 
-    //TODO: refactor class
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
     private static final int MINUTES_PER_DAY = 24 * 60;
-    //TODO: create methods for different messages to notify about shutdowns
     public String format(Map<LocalTime, LocalTime> todayShutdowns,
                          Map<LocalTime, LocalTime> tomorrowShutdowns,
                          LocalDate today) {

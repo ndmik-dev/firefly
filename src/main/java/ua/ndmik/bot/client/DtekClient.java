@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-//TODO: refactor client and AppConfig
 public class DtekClient {
 
     private static final String ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
@@ -85,7 +84,6 @@ public class DtekClient {
                             .setUserAgent(USER_AGENT)
             );
             Page page = context.newPage();
-            //TODO: fix blocking call
             page.navigate("https://www.dtek-krem.com.ua/ua/shutdowns",
                     new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE)
             );

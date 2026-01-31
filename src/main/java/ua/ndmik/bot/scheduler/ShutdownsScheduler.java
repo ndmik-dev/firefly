@@ -1,4 +1,4 @@
-package ua.ndmik.bot.service;
+package ua.ndmik.bot.scheduler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,15 +10,13 @@ import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
+import ua.ndmik.bot.service.DtekShutdownsService;
+import ua.ndmik.bot.service.MessageFormatter;
+import ua.ndmik.bot.service.TelegramService;
 
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
-import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
 
 @Service
 @Slf4j
@@ -48,7 +46,6 @@ public class ShutdownsScheduler {
         this.messageFormatter = messageFormatter;
     }
 
-    //TODO: add transactions
     @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}", timeUnit = TimeUnit.MINUTES)
     public void processShutdowns() {
         log.info("Running scheduler");
@@ -64,12 +61,9 @@ public class ShutdownsScheduler {
 
     private void processGroupUpdate(String groupId) {
         List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
-        if (users.isEmpty()) {
-            return;
-        }
-        //TODO: sendMessages. Fix TODAY/TOMORROW problem
         users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
+        //TODO: uncomment
 //        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
     }

@@ -3,7 +3,7 @@ package ua.ndmik.bot;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import ua.ndmik.bot.service.ShutdownsScheduler;
+import ua.ndmik.bot.scheduler.ShutdownsScheduler;
 import ua.ndmik.bot.telegram.DtekShutdownBot;
 
 @SpringBootApplication
