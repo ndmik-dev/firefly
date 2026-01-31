@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
+import ua.ndmik.bot.model.HourState;
 import ua.ndmik.bot.model.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -14,10 +15,15 @@ import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.DtekShutdownsService;
 import ua.ndmik.bot.service.MessageFormatter;
 import ua.ndmik.bot.service.TelegramService;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
@@ -34,6 +40,7 @@ public class ShutdownsScheduler {
     private final ScheduleResponseConverter converter;
     private final TelegramService telegramService;
     private final MessageFormatter messageFormatter;
+    private final JsonMapper mapper;
 
     public ShutdownsScheduler(DtekClient dtekClient,
                               DtekShutdownsService dtekService,
@@ -49,6 +56,7 @@ public class ShutdownsScheduler {
         this.converter = converter;
         this.telegramService = telegramService;
         this.messageFormatter = messageFormatter;
+        this.mapper = new JsonMapper();
     }
 
     @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}", timeUnit = TimeUnit.MINUTES)
@@ -61,10 +69,11 @@ public class ShutdownsScheduler {
         ScheduleResponse scheduleResponse = dtekClient.getShutdownsSchedule();
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
+        Set<String> tomorrowArrivedGroupIds = findTomorrowArrivedGroups(oldSchedules, newSchedules);
         compareAndUpdate(oldSchedules, newSchedules);
         List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
         for (String groupId : updatedGroupIds) {
-            processGroupUpdate(groupId);
+            processGroupUpdate(groupId, tomorrowArrivedGroupIds.contains(groupId));
         }
     }
 
@@ -80,9 +89,13 @@ public class ShutdownsScheduler {
         scheduleRepository.saveAll(tomorrowSchedules);
     }
 
-    private void processGroupUpdate(String groupId) {
+    private void processGroupUpdate(String groupId, boolean tomorrowArrived) {
         List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
-        users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
+        if (tomorrowArrived) {
+            users.forEach(user -> telegramService.sendUpdate(user.getChatId(), "📅 Графік на завтра зʼявився"));
+        } else {
+            users.forEach(user -> telegramService.sendUpdate(user.getChatId()));
+        }
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
         //TODO: uncomment
 //        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
@@ -109,6 +122,29 @@ public class ShutdownsScheduler {
                 .filter(schedule -> schedule.getScheduleDay().equals(newSchedule.getScheduleDay()))
                 .filter(schedule -> schedule.getGroupId().equals(newSchedule.getGroupId()))
                 .findFirst();
+    }
+
+    private Set<String> findTomorrowArrivedGroups(List<Schedule> oldSchedules, List<Schedule> newSchedules) {
+        Set<String> result = new HashSet<>();
+        for (Schedule newSchedule : newSchedules) {
+            if (!TOMORROW.equals(newSchedule.getScheduleDay())) {
+                continue;
+            }
+            Optional<Schedule> oldSchedule = findSchedule(oldSchedules, newSchedule);
+            if (oldSchedule.isPresent()
+                    && isScheduleEmpty(oldSchedule.get().getSchedule())
+                    && !isScheduleEmpty(newSchedule.getSchedule())) {
+                result.add(newSchedule.getGroupId());
+            }
+        }
+        return result;
+    }
+
+    private boolean isScheduleEmpty(String scheduleJson) {
+        Map<String, String> scheduleMap = mapper.readValue(scheduleJson, new TypeReference<>() {});
+        return scheduleMap.values()
+                .stream()
+                .allMatch(HourState.YES.getValue()::equals);
     }
 
     private boolean isBlockedWindow() {

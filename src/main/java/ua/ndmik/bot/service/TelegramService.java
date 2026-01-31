@@ -76,8 +76,13 @@ public class TelegramService {
     }
 
     public void sendUpdate(long chatId) {
+        sendUpdate(chatId, null);
+    }
+
+    public void sendUpdate(long chatId, String notice) {
         String menuTemplate = """
                 ℹ️ Оновлено
+                %s
 
                 🧩 Група: %s
                 🔔 Сповіщення: %s
@@ -90,7 +95,8 @@ public class TelegramService {
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
         String shutdowns = dtekService.getShutdownsMessage(schedules);
         String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
-        String message = String.format(menuTemplate, groupInfo, notificationInfo, shutdowns);
+        String noticeBlock = Strings.isNotBlank(notice) ? (notice + "\n\n") : "";
+        String message = String.format(menuTemplate, noticeBlock, groupInfo, notificationInfo, shutdowns);
         sendMessage(message, buildMainMenuMarkup(user), chatId);
     }
 
