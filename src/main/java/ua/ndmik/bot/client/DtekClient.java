@@ -15,19 +15,17 @@ import ua.ndmik.bot.service.ShutdownsResponseProcessor;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
+import static util.Constants.DTEK_KREM_URL;
+import static util.Constants.SHUTDOWNS_PATH;
 
 @Service
 @Slf4j
 public class DtekClient {
 
-    private static final String ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-    private static final String ACCEPT_LANGUAGE_HEADER = "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,uk;q=0.6";
-    private static final String CACHE_CONTROL_HEADER = "max-age=0";
-    private static final String REFERER_HEADER = "https://www.dtek-krem.com.ua/ua/shutdowns";
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36";
+    private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
 
     private final RestClient restClient;
     private final ShutdownsResponseProcessor responseProcessor;
@@ -41,7 +39,7 @@ public class DtekClient {
         this.mapper = new JsonMapper();
     }
 
-    public ScheduleResponse getShutdownsSchedule() {
+    public ScheduleResponse getSchedules() {
         if (cachedCookies == null || cachedCookies.isBlank()) {
             cachedCookies = retrieveCookies();
         }
@@ -60,11 +58,7 @@ public class DtekClient {
 
     private String executeRequest() {
         RestClient.RequestHeadersSpec<?> request = restClient.get()
-                .uri("/ua/shutdowns")
-                .header(HttpHeaders.ACCEPT, ACCEPT_HEADER)
-                .header(HttpHeaders.ACCEPT_LANGUAGE, ACCEPT_LANGUAGE_HEADER)
-                .header(HttpHeaders.CACHE_CONTROL, CACHE_CONTROL_HEADER)
-                .header(HttpHeaders.REFERER, REFERER_HEADER)
+                .uri(SHUTDOWNS_PATH)
                 .header(HttpHeaders.COOKIE, cachedCookies);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {
@@ -81,10 +75,10 @@ public class DtekClient {
             );
             BrowserContext context = browser.newContext(
                     new Browser.NewContextOptions()
-                            .setUserAgent(USER_AGENT)
+                            .setUserAgent(USER_AGENT_HEADER)
             );
             Page page = context.newPage();
-            page.navigate("https://www.dtek-krem.com.ua/ua/shutdowns",
+            page.navigate(DTEK_KREM_URL + SHUTDOWNS_PATH,
                     new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE)
             );
             // Wait a bit to ensure all cookies are set
@@ -108,7 +102,7 @@ public class DtekClient {
             throw new IllegalStateException("Empty response from DTEK");
         }
         Element script = Jsoup.parse(html)
-                .select("script:containsData(DisconSchedule.fact)")
+                .select(SHUTDOWNS_SCRIPT)
                 .first();
         if (script == null) {
             throw new IllegalStateException("DisconSchedule.fact not found");
@@ -126,7 +120,7 @@ public class DtekClient {
             return true;
         }
         return Jsoup.parse(html)
-                .selectFirst("script:containsData(DisconSchedule.fact)") == null;
+                .selectFirst(SHUTDOWNS_SCRIPT) == null;
     }
 
     private boolean isRobotBlock(String html) {

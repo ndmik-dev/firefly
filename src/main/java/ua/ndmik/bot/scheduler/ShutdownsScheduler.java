@@ -66,7 +66,7 @@ public class ShutdownsScheduler {
             return;
         }
         log.info("Running scheduler");
-        ScheduleResponse scheduleResponse = dtekClient.getShutdownsSchedule();
+        ScheduleResponse scheduleResponse = dtekClient.getSchedules();
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
         Set<String> tomorrowArrivedGroupIds = findTomorrowArrivedGroups(oldSchedules, newSchedules);

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ShutdownsResponseProcessor {
 
-    public static final String SCHEDULES_KEY = "DisconSchedule.fact";
+    private static final String SCHEDULES_KEY = "DisconSchedule.fact";
 
     public String parseSchedule(String textBlock) {
         int pos = textBlock.indexOf(SCHEDULES_KEY);
