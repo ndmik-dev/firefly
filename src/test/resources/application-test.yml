@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: .env.example
   datasource:
     url: jdbc:sqlite:/tmp/test.db?busy_timeout=10000&journal_mode=WAL
     driver-class-name: org.sqlite.JDBC
