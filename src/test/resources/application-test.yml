@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:sqlite:build/test.db?busy_timeout=10000&journal_mode=WAL
+    url: jdbc:sqlite:/tmp/test.db?busy_timeout=10000&journal_mode=WAL
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
