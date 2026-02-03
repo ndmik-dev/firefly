@@ -7,6 +7,7 @@ import ua.ndmik.bot.model.HourState;
 import ua.ndmik.bot.model.ShutdownInterval;
 import ua.ndmik.bot.model.entity.Schedule;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,35 +32,34 @@ public class DtekShutdownsService {
         Schedule todaySchedule = schedules.stream()
                 .filter(schedule -> TODAY.equals(schedule.getScheduleDay()))
                 .findFirst()
-                .get();
+                .orElse(new Schedule());
         Schedule tomorrowSchedule = schedules.stream()
                 .filter(schedule -> TOMORROW.equals(schedule.getScheduleDay()))
                 .findFirst()
-                .get();
+                .orElse(new Schedule());
 
         Map<LocalTime, LocalTime> todayShutdowns = getShutdowns(todaySchedule);
         Map<LocalTime, LocalTime> tomorrowShutdowns = getShutdowns(tomorrowSchedule);
 
-        return messageFormatter.format(todayShutdowns, tomorrowShutdowns, java.time.LocalDate.now());
+        return messageFormatter.format(todayShutdowns, tomorrowShutdowns, LocalDate.now());
     }
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
-        Map<String, String> scheduleMap = mapper.readValue(schedule.getSchedule(), new TypeReference<>() {});
-        if (isScheduleEmpty(scheduleMap)) {
+        Map<String, String> hourStateMap = mapper.readValue(schedule.getSchedule(), new TypeReference<>() {});
+        if (isScheduleEmpty(hourStateMap)) {
             return Map.of();
         }
-        return getShutdownIntervals(scheduleMap);
+        return getShutdownIntervals(hourStateMap);
     }
 
     private boolean isScheduleEmpty(Map<String, String> schedule) {
-        return schedule
-                .values()
+        return schedule.values()
                 .stream()
                 .allMatch(HourState.YES.getValue()::equals);
     }
 
     private Map<LocalTime, LocalTime> getShutdownIntervals(Map<String, String> hourStateMap) {
-        ArrayList<ShutdownInterval> shutdownIntervals = new ArrayList<>();
+        List<ShutdownInterval> shutdownIntervals = new ArrayList<>();
         for (int hour = 1; hour <= 24; hour++) {
             HourState state = HourState.resolveState(hourStateMap.get(String.valueOf(hour)));
             ShutdownInterval shutdown = toShutdownInterval(hour, state);

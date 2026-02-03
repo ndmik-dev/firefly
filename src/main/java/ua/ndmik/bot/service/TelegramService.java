@@ -9,12 +9,12 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
@@ -53,84 +53,115 @@ public class TelegramService {
                 
                 Оберіть групу та керуйте сповіщеннями.
                 """;
-        sendMessage(update, greeting);
-    }
-
-    public void sendMessage(Update update) {
-        //TODO: add title instead of menu text
-        String menuTemplate = """
-                🧩 Група: %s
-                🔔 Сповіщення: %s
-
-                %s
-                """;
         UserSettings user = getOrCreateUser(update);
-        String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
-        String groupInfo = formatGroupInfo(user.getGroupId());
-        String shutdowns = "";
-        if (user.getGroupId() != null) {
-            List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
-            shutdowns = dtekService.getShutdownsMessage(schedules);
-        }
-        sendMessage(update, String.format(menuTemplate, groupInfo, notificationInfo, shutdowns));
+        sendMessage(user, greeting);
     }
 
-    public void sendUpdate(long chatId) {
-        sendUpdate(chatId, null);
+    public void sendMessage(UserSettings user) {
+        String message = formatMessage(user, null);
+        sendMessage(user, message);
     }
 
-    public void sendUpdate(long chatId, String notice) {
-        String menuTemplate = """
-                ℹ️ Оновлено
-                %s
-
-                🧩 Група: %s
-                🔔 Сповіщення: %s
-
-                %s
-                """;
-        UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
-        String groupInfo = formatGroupInfo(user.getGroupId());
-        List<Schedule> schedules = scheduleRepository.findAllByGroupId(user.getGroupId());
-        String shutdowns = dtekService.getShutdownsMessage(schedules);
-        String notificationInfo = formatNotificationInfo(user.isNotificationEnabled());
-        String noticeBlock = Strings.isNotBlank(notice) ? (notice + "\n\n") : "";
-        String message = String.format(menuTemplate, noticeBlock, groupInfo, notificationInfo, shutdowns);
-        sendMessage(message, buildMainMenuMarkup(user), chatId);
+    private void sendMessage(UserSettings user, String text) {
+        InlineKeyboardMarkup menu = buildMainMenuMarkup(user);
+        Message message = new Message(
+                null,
+                user.getChatId(),
+                text,
+                menu
+        );
+        sendMessage(message);
     }
 
-    public void sendMessage(Update update, String text) {
-        InlineKeyboardMarkup menu = buildMainMenuMarkup(getOrCreateUser(update));
-        sendMessage(update, text, menu);
+    public void sendUpdate(UserSettings user, String header) {
+        Message message = new Message(
+                null,
+                user.getChatId(),
+                formatMessage(user, header),
+                buildMainMenuMarkup(user)
+        );
+        sendMessage(message);
     }
 
-    public void sendMessage(Update update, String text, InlineKeyboardMarkup markup) {
-        if (update.getCallbackQuery() != null && update.getCallbackQuery().getMessage() != null) {
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
-            int messageId = update.getCallbackQuery().getMessage().getMessageId();
-            editMessage(text, markup, chatId, messageId);
-            return;
-        }
-        if (update.getMessage() != null) {
-            long chatId = update.getMessage().getChatId();
-            sendMessage(text, markup, chatId);
-        }
-    }
-
-    public void sendMessage(String text, InlineKeyboardMarkup markup, long chatId) {
-        SendMessage message = SendMessage
+    private void sendMessage(Message message) {
+        SendMessage sendMessage = SendMessage
                 .builder()
-                .text(text)
-                .chatId(chatId)
-                .replyMarkup(markup)
+                .text(message.text())
+                .chatId(message.chatId())
+                .replyMarkup(message.menu())
                 .parseMode(ParseMode.HTML)
                 .build();
         try {
-            telegramClient.execute(message);
+            log.info("Sending message to chatId={}", message.chatId());
+            telegramClient.execute(sendMessage);
         } catch (TelegramApiException e) {
-            log.error("Exception while sending message, chatId={}", chatId, e);
+            log.error("Exception while sending message, chatId={}", message.chatId(), e);
         }
+    }
+
+    public void editMessage(Message message) {
+        EditMessageText editMessage = EditMessageText
+                .builder()
+                .chatId(message.chatId())
+                .messageId(message.messageId())
+                .text(message.text())
+                .replyMarkup(message.menu())
+                .parseMode(ParseMode.HTML)
+                .build();
+        try {
+            log.info("Editing message in chatId={}, messageId={}", message.chatId(), message.messageId());
+            telegramClient.execute(editMessage);
+        } catch (TelegramApiException e) {
+            log.error("Exception while editing message, chatId={}, messageId={}", message.chatId(), message.messageId(), e);
+        }
+    }
+
+    private String formatMessage(UserSettings user, String header) {
+        String template = """
+                %s
+                🧩 Група: %s
+                🔔 Сповіщення: %s
+
+                %s
+                """;
+        header = Strings.isNotBlank(header)
+                ? (header + "\n\n")
+                : "";
+        String groupId = user.getGroupId();
+        String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
+        List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
+        String shutdowns = dtekService.getShutdownsMessage(schedules);
+        return String.format(template, header, groupId, notificationStatus, shutdowns);
+    }
+
+    private UserSettings getOrCreateUser(Update update) {
+        long chatId = update.getMessage() != null
+                ? update.getMessage().getChatId()
+                : update.getCallbackQuery().getMessage().getChatId();
+        log.info("Finding user with chatId={}", chatId);
+        return userRepository.findByChatId(chatId)
+                .orElseGet(() -> createNewUser(chatId));
+    }
+
+    private UserSettings createNewUser(Long chatId) {
+        log.info("Creating new user with chatId={}", chatId);
+        return userRepository.save(UserSettings.builder()
+                .chatId(chatId)
+                .isNotificationEnabled(true)
+                .build());
+    }
+
+    private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
+        InlineKeyboardRow group = new InlineKeyboardRow(List.of(
+                button(groupButtonText(user), GROUP_SELECTION.name())
+        ));
+        if (user.getGroupId() == null) {
+            return menu(List.of(group));
+        }
+        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
+                button(notificationButtonText(user), NOTIFICATION_CLICK.name())
+        ));
+        return menu(List.of(group, notifications));
     }
 
     public InlineKeyboardMarkup menu(List<InlineKeyboardRow> rows) {
@@ -157,38 +188,6 @@ public class TelegramService {
                 .collect(Collectors.toList());
     }
 
-    private UserSettings createNewUser(Long chatId) {
-        return userRepository.save(UserSettings.builder()
-                .chatId(chatId)
-                .isNotificationEnabled(true)
-                .build());
-    }
-
-    private UserSettings getOrCreateUser(Update update) {
-        long chatId = update.getMessage() != null
-                ? update.getMessage().getChatId()
-                : update.getCallbackQuery().getMessage().getChatId();
-        return userRepository.findByChatId(chatId)
-                .orElseGet(() -> createNewUser(chatId));
-    }
-
-    private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
-        InlineKeyboardRow group = new InlineKeyboardRow(List.of(
-                button(groupButtonText(user), GROUP_SELECTION.name())
-        ));
-        if (user.getGroupId() == null) {
-            return menu(List.of(group));
-        }
-        InlineKeyboardRow notifications = new InlineKeyboardRow(List.of(
-                button(notificationButtonText(user), NOTIFICATION_CLICK.name())
-        ));
-        return menu(List.of(group, notifications));
-    }
-
-    public InlineKeyboardRow backRow(String callback) {
-        return new InlineKeyboardRow(List.of(button("Назад", callback)));
-    }
-
     private String groupButtonText(UserSettings user) {
         return user.getGroupId() != null
                 ? "🧩 Змінити групу"
@@ -201,31 +200,9 @@ public class TelegramService {
                 : "🔔 Увімкнути сповіщення";
     }
 
-    private String formatGroupInfo(String groupId) {
-        return Strings.isNotEmpty(groupId)
-                ? groupId
-                : "Оберіть групу відключень нижче";
-    }
-
     private String formatNotificationInfo(boolean isEnabled) {
         return isEnabled
                 ? "✅ Увімкнено"
                 : "❌ Вимкнено";
-    }
-
-    private void editMessage(String text, InlineKeyboardMarkup markup, long chatId, int messageId) {
-        EditMessageText message = EditMessageText
-                .builder()
-                .chatId(chatId)
-                .messageId(messageId)
-                .text(text)
-                .replyMarkup(markup)
-                .parseMode(ParseMode.HTML)
-                .build();
-        try {
-            telegramClient.execute(message);
-        } catch (TelegramApiException e) {
-            log.error("Exception while editing message, chatId={}, messageId={}", chatId, messageId, e);
-        }
     }
 }

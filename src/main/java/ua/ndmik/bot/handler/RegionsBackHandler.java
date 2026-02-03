@@ -21,11 +21,11 @@ public class RegionsBackHandler implements CallbackHandler {
     @Override
     public void handle(Update update) {
         long chatId = getChatId(update);
-        UserSettings userSettings = userRepository.findByChatId(chatId)
+        UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
-        String groupId = userSettings.getGroupId();
+        String groupId = user.getGroupId();
         if (groupId != null) {
-            telegramService.sendMessage(update);
+            telegramService.sendMessage(user);
         } else {
             telegramService.sendGreeting(update);
         }

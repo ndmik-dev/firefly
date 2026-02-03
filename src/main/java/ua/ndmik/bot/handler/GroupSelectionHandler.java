@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
@@ -26,8 +27,20 @@ public class GroupSelectionHandler implements CallbackHandler {
                         telegramService.button("Київ (поки не робе)", KYIV.name()),
                         telegramService.button("Київщина", REGION.name())
                 ));
-        InlineKeyboardRow back = telegramService.backRow(REGIONS_BACK.name());
+        InlineKeyboardRow back = new InlineKeyboardRow(
+                List.of(
+                        telegramService.button("Назад", REGIONS_BACK.name())
+                ));
         InlineKeyboardMarkup menu = telegramService.menu(List.of(regions, back));
-        telegramService.sendMessage(update, "Оберіть групу відключень", menu);
+
+        long chatId = getChatId(update);
+        int messageId = update.getCallbackQuery().getMessage().getMessageId();
+        Message message = new Message(
+                messageId,
+                chatId,
+                "Оберіть групу відключень",
+                menu
+        );
+        telegramService.editMessage(message);
     }
 }

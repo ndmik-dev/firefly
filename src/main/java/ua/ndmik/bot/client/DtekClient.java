@@ -5,13 +5,10 @@ import com.microsoft.playwright.options.Cookie;
 import com.microsoft.playwright.options.WaitUntilState;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import tools.jackson.databind.json.JsonMapper;
 import ua.ndmik.bot.model.ScheduleResponse;
-import ua.ndmik.bot.service.ShutdownsResponseProcessor;
 
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +17,7 @@ import java.util.stream.Collectors;
 import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
 import static util.Constants.DTEK_KREM_URL;
 import static util.Constants.SHUTDOWNS_PATH;
+import static util.ScheduleParser.parseScheduleFromHtml;
 
 @Service
 @Slf4j
@@ -28,15 +26,10 @@ public class DtekClient {
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
 
     private final RestClient restClient;
-    private final ShutdownsResponseProcessor responseProcessor;
-    private final JsonMapper mapper;
     private volatile String cachedCookies;
 
-    public DtekClient(RestClient restClient,
-                      ShutdownsResponseProcessor responseProcessor) {
+    public DtekClient(RestClient restClient) {
         this.restClient = restClient;
-        this.responseProcessor = responseProcessor;
-        this.mapper = new JsonMapper();
     }
 
     public ScheduleResponse getSchedules() {
@@ -50,6 +43,7 @@ public class DtekClient {
     private String fetchHtml() {
         String html = executeRequest();
         if (isBlockedOrMissing(html)) {
+            log.warn("Some error during schedule extracting, trying to fetch cookies.");
             cachedCookies = retrieveCookies();
             html = executeRequest();
         }
@@ -62,6 +56,7 @@ public class DtekClient {
                 .header(HttpHeaders.COOKIE, cachedCookies);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {
+                log.warn("Client error during executing request statusCode={}, body={}", res.getStatusCode(), res.getBody());
                 return null;
             }
             return res.bodyTo(String.class);
@@ -69,6 +64,7 @@ public class DtekClient {
     }
 
     private String retrieveCookies() {
+        log.info("Retrieving cookies");
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(
                     new BrowserType.LaunchOptions().setHeadless(true)
@@ -95,20 +91,6 @@ public class DtekClient {
             log.warn("Failed to retrieve cookies: {}", e.getMessage());
             throw e;
         }
-    }
-
-    private ScheduleResponse parseScheduleFromHtml(String html) {
-        if (html == null || html.isBlank()) {
-            throw new IllegalStateException("Empty response from DTEK");
-        }
-        Element script = Jsoup.parse(html)
-                .select(SHUTDOWNS_SCRIPT)
-                .first();
-        if (script == null) {
-            throw new IllegalStateException("DisconSchedule.fact not found");
-        }
-        String scheduleJson = responseProcessor.parseSchedule(script.data());
-        return mapper.readValue(scheduleJson, ScheduleResponse.class);
     }
 
     private boolean isBlockedOrMissing(String html) {

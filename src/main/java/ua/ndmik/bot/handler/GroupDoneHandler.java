@@ -47,6 +47,6 @@ public class GroupDoneHandler implements CallbackHandler {
         }
         user.setGroupId(groupId);
         userRepository.save(user);
-        telegramService.sendMessage(update);
+        telegramService.sendMessage(user);
     }
 }

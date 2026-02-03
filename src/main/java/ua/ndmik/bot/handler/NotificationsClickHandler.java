@@ -2,7 +2,7 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.message.Message;
+import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
 
@@ -25,7 +25,12 @@ public class NotificationsClickHandler implements CallbackHandler {
                 .ifPresent(user -> {
                     user.setNotificationEnabled(!user.isNotificationEnabled());
                     userRepository.save(user);
-                    telegramService.sendMessage(update);
+                    int messageId = update.getCallbackQuery().getMessage().getMessageId();
+                    Message message = new Message(
+                          chatId,
+                          messageId,
+                    )
+                    telegramService.editMessage(update);
                 });
     }
 }

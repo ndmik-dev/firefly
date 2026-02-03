@@ -5,6 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
@@ -50,7 +51,15 @@ public class RegionHandler implements CallbackHandler {
                 telegramService.button("✅ Готово", GROUP_DONE.name()))
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
-        telegramService.sendMessage(update, "Виберіть групу", menu);
+
+        int messageId = update.getCallbackQuery().getMessage().getMessageId();
+        Message message = new Message(
+                messageId,
+                chatId,
+                "Виберіть групу",
+                menu
+        );
+        telegramService.editMessage(message);
     }
 
     public void reprint(Update update, String userGroupId, String text) {
@@ -69,7 +78,16 @@ public class RegionHandler implements CallbackHandler {
                 telegramService.button("✅ Готово", GROUP_DONE.name()))
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
-        telegramService.sendMessage(update, text, menu);
+
+        long chatId = getChatId(update);
+        int messageId = update.getCallbackQuery().getMessage().getMessageId();
+        Message message = new Message(
+                messageId,
+                chatId,
+                text,
+                menu
+        );
+        telegramService.editMessage(message);
     }
 
     private String formatButton(String groupId, String userGroupId) {

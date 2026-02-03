@@ -15,15 +15,15 @@ public class MessageFormatter {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
     private static final int MINUTES_PER_DAY = 24 * 60;
+
+    //TODO: debug and refactor, rm extra code
     public String format(Map<LocalTime, LocalTime> todayShutdowns,
                          Map<LocalTime, LocalTime> tomorrowShutdowns,
                          LocalDate today) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("💡 <b>Світло буде</b>\n\n");
-        sb.append(formatDay("Сьогодні", today, todayShutdowns));
-        sb.append('\n');
-        sb.append(formatDay("Завтра", today.plusDays(1), tomorrowShutdowns));
-        return sb.toString().trim();
+        return  "💡 <b>Світло буде</b>\n\n" +
+                formatDay("Сьогодні", today, todayShutdowns) +
+                '\n' +
+                formatDay("Завтра", today.plusDays(1), tomorrowShutdowns);
     }
 
     private String formatDay(String label, LocalDate date, Map<LocalTime, LocalTime> shutdowns) {
@@ -90,13 +90,5 @@ public class MessageFormatter {
         return time.getHour() * 60 + time.getMinute();
     }
 
-    private static class LightInterval {
-        private final int startMinutes;
-        private final int endMinutes;
-
-        private LightInterval(int startMinutes, int endMinutes) {
-            this.startMinutes = startMinutes;
-            this.endMinutes = endMinutes;
-        }
-    }
+    private record LightInterval(int startMinutes, int endMinutes) {}
 }
