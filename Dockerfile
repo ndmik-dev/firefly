@@ -1,6 +1,22 @@
-FROM eclipse-temurin:25-jdk-jammy
+FROM eclipse-temurin:25-jdk-jammy AS builder
 
 WORKDIR /app
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+COPY gradlew settings.gradle build.gradle /app/
+COPY gradle /app/gradle
+COPY src /app/src
+
+RUN mkdir -p /ms-playwright
+RUN ./gradlew --no-daemon playwrightInstallChromium
+RUN ./gradlew --no-daemon bootJar
+
+FROM eclipse-temurin:25-jre-jammy
+
+WORKDIR /app
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 # Playwright runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,13 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
   && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
-RUN ./gradlew --no-daemon bootJar -x test
+COPY --from=builder /ms-playwright /ms-playwright
+COPY --from=builder /app/build/libs/dtek-telegram-bot-0.0.1.jar /app/app.jar
 
-ENV SPRING_DATASOURCE_URL=jdbc:sqlite:/app/db/app.db
-RUN mkdir -p /app/db \
-  && if [ -f /app/src/main/resources/db/app.db ]; then cp /app/src/main/resources/db/app.db /app/db/app.db; fi
-VOLUME ["/app/db"]
-
-EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/build/libs/dtek-telegram-bot-0.0.1.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]

@@ -12,6 +12,7 @@ public class ScheduleParser {
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
     private static final String SCHEDULES_KEY = "DisconSchedule.fact";
 
+    //TODO: retry on exception
     public static ScheduleResponse parseScheduleFromHtml(String html) {
         if (html == null || html.isBlank()) {
             throw new IllegalStateException("Empty response from DTEK");
