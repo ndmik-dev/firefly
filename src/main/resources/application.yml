@@ -4,7 +4,7 @@ spring:
   application:
     name: dtek-telegram-bot
   datasource:
-    url: jdbc:sqlite:src/main/resources/db/app.db?busy_timeout=10000&journal_mode=WAL
+    url: jdbc:sqlite:src/main/resources/db/app.db
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
