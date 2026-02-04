@@ -1,6 +1,7 @@
 package ua.ndmik.bot.telegram;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
@@ -11,6 +12,7 @@ import ua.ndmik.bot.model.MenuCallback;
 import ua.ndmik.bot.service.TelegramService;
 
 @Service
+@Profile("!test")
 public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
     private final String botToken;

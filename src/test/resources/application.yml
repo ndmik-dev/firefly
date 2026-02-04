@@ -1,6 +1,21 @@
 spring:
+  config:
+    import: optional:file:.env.example[.properties]
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+  task:
+    scheduling:
+      enabled: false
+
+telegram:
+  bot-token: "TEST_TOKEN"
+
+app:
+  init-db-on-startup: false
+
+scheduler:
+  shutdowns:
+    fixed-delay-ms: 2
