@@ -37,6 +37,12 @@ public class TelegramService {
     private final ScheduleRepository scheduleRepository;
     private final DtekShutdownsService dtekService;
 
+    public static String GREETING = """
+                ⚡️ DTEK
+                
+                Оберіть групу та керуйте сповіщеннями.
+                """;
+
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
                            UserSettingsRepository userRepository,
                            ScheduleRepository scheduleRepository,
@@ -48,21 +54,19 @@ public class TelegramService {
     }
 
     public void sendGreeting(Update update) {
-        String greeting = """
-                ⚡️ DTEK
-                
-                Оберіть групу та керуйте сповіщеннями.
-                """;
         UserSettings user = getOrCreateUser(update);
-        sendMessage(user, greeting);
+        InlineKeyboardMarkup menu = buildMainMenuMarkup(user);
+        Message message = new Message(
+                null,
+                user.getChatId(),
+                GREETING,
+                menu
+        );
+        sendNewMessage(message);
     }
 
     public void sendMessage(UserSettings user) {
-        String message = formatMessage(user, null);
-        sendMessage(user, message);
-    }
-
-    private void sendMessage(UserSettings user, String text) {
+        String text = formatMessage(user, null);
         InlineKeyboardMarkup menu = buildMainMenuMarkup(user);
         Message message = new Message(
                 null,
@@ -70,7 +74,7 @@ public class TelegramService {
                 text,
                 menu
         );
-        sendMessage(message);
+        sendNewMessage(message);
     }
 
     public void sendUpdate(UserSettings user, String header) {
@@ -80,10 +84,10 @@ public class TelegramService {
                 formatMessage(user, header),
                 buildMainMenuMarkup(user)
         );
-        sendMessage(message);
+        sendNewMessage(message);
     }
 
-    private void sendMessage(Message message) {
+    private void sendNewMessage(Message message) {
         SendMessage sendMessage = SendMessage
                 .builder()
                 .text(message.text())
@@ -116,7 +120,7 @@ public class TelegramService {
         }
     }
 
-    private String formatMessage(UserSettings user, String header) {
+    public String formatMessage(UserSettings user, String header) {
         String template = """
                 %s
                 🧩 Група: %s
@@ -151,7 +155,7 @@ public class TelegramService {
                 .build());
     }
 
-    private InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
+    public InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
         InlineKeyboardRow group = new InlineKeyboardRow(List.of(
                 button(groupButtonText(user), GROUP_SELECTION.name())
         ));

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
@@ -47,6 +48,14 @@ public class GroupDoneHandler implements CallbackHandler {
         }
         user.setGroupId(groupId);
         userRepository.save(user);
-        telegramService.sendMessage(user);
+
+        int messageId = update.getCallbackQuery().getMessage().getMessageId();
+        Message message = new Message(
+                messageId,
+                chatId,
+                telegramService.formatMessage(user, ""),
+                telegramService.buildMainMenuMarkup(user)
+        );
+        telegramService.editMessage(message);
     }
 }

@@ -27,10 +27,12 @@ public class NotificationsClickHandler implements CallbackHandler {
                     userRepository.save(user);
                     int messageId = update.getCallbackQuery().getMessage().getMessageId();
                     Message message = new Message(
-                          chatId,
-                          messageId,
-                    )
-                    telegramService.editMessage(update);
+                            messageId,
+                            chatId,
+                            telegramService.formatMessage(user, ""),
+                            telegramService.buildMainMenuMarkup(user)
+                    );
+                    telegramService.editMessage(message);
                 });
     }
 }
