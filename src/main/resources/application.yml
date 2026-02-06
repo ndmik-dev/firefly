@@ -27,4 +27,4 @@ telegram:
 
 scheduler:
   shutdowns:
-    fixed-delay-ms: 2
+    fixed-delay-ms: 10
