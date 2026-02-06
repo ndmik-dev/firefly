@@ -33,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -sS -X POST \
-            "${{ secrets.DOKPLOY_URL }}/api/application.deploy" \
+            "${{ secrets.DOKPLOY_URL }}/api/deploy/OajQGcaF1giHARhqQlcZL" \
             -H "accept: application/json" \
             -H "Content-Type: application/json" \
             -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
