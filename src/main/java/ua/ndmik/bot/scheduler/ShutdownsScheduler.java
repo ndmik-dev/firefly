@@ -142,7 +142,7 @@ public class ShutdownsScheduler {
         }
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
         //TODO: uncomment
-//        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
+        schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
     }
 }

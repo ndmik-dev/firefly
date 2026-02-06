@@ -1,6 +1,7 @@
 services:
   dtek-telegram-bot:
     image: ghcr.io/ndmik-dev/light-finder:latest
+    restart: unless-stopped
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       SPRING_DATASOURCE_URL: jdbc:sqlite:/app/db/app.db
@@ -8,3 +9,7 @@ services:
       - "8080:8080"
     volumes:
       - ./db:/app/db
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
