@@ -29,12 +29,8 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
 
-      - name: Trigger Dokploy Deploy
+      - name: Deploy
         run: |
-          set -euo pipefail
-          curl -sS -X POST \
-            "${{ secrets.DOKPLOY_URL }}/api/deploy/compose/a0Ges-vOWcIXXlUNSDBHg" \
-            -H "accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
-            -d '{"applicationId":"${{ secrets.DOKPLOY_APPLICATION_ID }}"}'
+          curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+        env:
+          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}

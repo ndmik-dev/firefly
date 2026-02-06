@@ -1,6 +1,6 @@
 services:
   dtek-telegram-bot:
-    build: .
+    image: ghcr.io/ndmik-dev/light-finder:latest
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       SPRING_DATASOURCE_URL: jdbc:sqlite:/app/db/app.db
