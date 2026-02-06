@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "dev" ]
 
 permissions:
   contents: read
@@ -29,8 +29,12 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
 
-      - name: Deploy
+      - name: Trigger Dokploy Deploy (Compose)
         run: |
-          curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }}
-        env:
-          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+          set -euo pipefail
+          curl -sS -X POST \
+            "${{ secrets.DOKPLOY_URL }}/api/deploy/compose/${{ secrets.DOKPLOY_APPLICATION_ID }}" \
+            -H "accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
+            -d '{"applicationId":"${{ secrets.DOKPLOY_APPLICATION_ID }}","branch":"dev"}'
