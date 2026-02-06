@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - dev
+      - main # to not run for now
 
 jobs:
   build:
