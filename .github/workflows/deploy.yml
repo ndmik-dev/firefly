@@ -38,8 +38,14 @@ jobs:
           context: .
           no-cache: true
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
 
-      - name: Trigger Dokploy Compose Deploy
-        run: |
-          curl -fsS -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+      - name: Dokploy Deployment
+        uses: benbristow/dokploy-deploy-action@0.2.2
+        with:
+          api_token: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
+          application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+          dokploy_url: ${{ secrets.DOKPLOY_URL }}
+          service_type: compose
