@@ -39,8 +39,7 @@ jobs:
           no-cache: true
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository }}:latest
 
       - name: Dokploy Deployment
         uses: benbristow/dokploy-deploy-action@0.2.2

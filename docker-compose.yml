@@ -1,6 +1,6 @@
 services:
   dtek-telegram-bot:
-    image: ghcr.io/ndmik-dev/dtek-telegram-bot:${GITHUB_SHA}
+    image: ghcr.io/ndmik-dev/light-finder:latest
     restart: unless-stopped
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
