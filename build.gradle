@@ -6,7 +6,7 @@ plugins {
 
 group = 'io.ndmik'
 version = '0.0.1'
-description = 'dtek-telegram-bot'
+description = 'firefly'
 
 java {
     toolchain {

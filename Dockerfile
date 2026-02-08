@@ -48,6 +48,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /ms-playwright /ms-playwright
-COPY --from=builder /app/build/libs/dtek-telegram-bot-0.0.1.jar /app/app.jar
+COPY --from=builder /app/build/libs/firefly-0.0.1.jar /app/app.jar
 
 ENTRYPOINT ["java","-jar","/app/app.jar"]
