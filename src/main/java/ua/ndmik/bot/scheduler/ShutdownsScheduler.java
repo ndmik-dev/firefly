@@ -127,8 +127,17 @@ public class ShutdownsScheduler {
         log.info("Running daily schedule rollover");
         scheduleRepository.deleteByScheduleDay(TODAY);
         List<Schedule> tomorrowSchedules = scheduleRepository.findAllByScheduleDay(TOMORROW);
-        tomorrowSchedules.forEach(schedule -> schedule.setScheduleDay(TODAY));
-        scheduleRepository.saveAll(tomorrowSchedules);
+        scheduleRepository.deleteByScheduleDay(TOMORROW);
+        List<Schedule> rolledSchedules = tomorrowSchedules.stream()
+                .map(schedule -> Schedule.builder()
+                        .groupId(schedule.getGroupId())
+                        .scheduleDay(TODAY)
+                        .schedule(schedule.getSchedule())
+                        .lastUpdate(schedule.getLastUpdate())
+                        .needToNotify(schedule.getNeedToNotify())
+                        .build())
+                .toList();
+        scheduleRepository.saveAll(rolledSchedules);
     }
 
     private void processGroupUpdate(String groupId, boolean tomorrowArrived) {
