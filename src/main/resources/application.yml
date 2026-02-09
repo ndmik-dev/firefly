@@ -1,6 +1,9 @@
 spring:
   config:
     import: optional:file:.env[.properties]
+  servlet:
+    multipart:
+      enabled: false
   application:
     name: firefly
   datasource:
