@@ -116,7 +116,11 @@ public class ShutdownsScheduler {
 
     private void updateExistingSchedule(Schedule oldSchedule, Schedule newSchedule) {
         if (!oldSchedule.getSchedule().equals(newSchedule.getSchedule())) {
-            log.info("Updating existing schedule, oldSchedule={}, newSchedule={}", oldSchedule, newSchedule);
+            log.info("Updating existing schedule for gpoupId={}, scheduleDay={}, oldSchedule={}, newSchedule={}",
+                    oldSchedule.getGroupId(),
+                    oldSchedule.getScheduleDay(),
+                    oldSchedule,
+                    newSchedule);
             scheduleRepository.save(newSchedule);
         }
     }
@@ -143,10 +147,10 @@ public class ShutdownsScheduler {
     private void processGroupUpdate(String groupId, boolean tomorrowArrived) {
         List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
         if (tomorrowArrived) {
-            log.info("Sending update. Tomorrow schedule appeared, groupId={}", groupId);
+            log.info("Tomorrow schedule appeared for groupId={}. Sending updates", groupId);
             users.forEach(user -> telegramService.sendUpdate(user, "📅 Графік на завтра зʼявився"));
         } else {
-            log.info("Sending update. Schedule changed, groupId={}", groupId);
+            log.info("Schedule changed for groupId={}. Sending updates", groupId);
             users.forEach(user -> telegramService.sendUpdate(user, null));
         }
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
