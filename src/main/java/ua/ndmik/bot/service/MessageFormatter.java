@@ -30,11 +30,11 @@ public class MessageFormatter {
         StringBuilder sb = new StringBuilder();
         sb.append("📅 <b>")
                 .append(label)
-                .append("</b>, ")
+                .append("</b>: ")
                 .append("<b>")
                 .append(date.format(DATE_FORMATTER))
                 .append("</b>")
-                .append('\n');
+                .append("\n\n");
         if (shutdowns == null || shutdowns.isEmpty()) {
             sb.append("⚠️ <i>Графік ще не створено</i>\n");
             return sb.toString();
