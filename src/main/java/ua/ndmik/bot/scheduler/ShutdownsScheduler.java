@@ -122,7 +122,7 @@ public class ShutdownsScheduler {
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "${scheduler.shutdowns.time-zone:Europe/Kyiv}")
     public void rolloverSchedulesAtMidnight() {
         log.info("Running daily schedule rollover");
         scheduleRepository.deleteByScheduleDay(TODAY);
