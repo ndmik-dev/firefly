@@ -57,9 +57,18 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     }
 
     private void handleCallback(Update update) {
-        String data = update.getCallbackQuery().getData();
-        String callbackKey = data.split(":", 2)[0];
-        MenuCallback callback = MenuCallback.valueOf(callbackKey);
-        callbackHandlerResolver.getHandler(callback).handle(update);
+        try {
+            String data = update.getCallbackQuery().getData();
+            String callbackKey = data.split(":", 2)[0];
+            MenuCallback callback;
+            try {
+                callback = MenuCallback.valueOf(callbackKey);
+            } catch (IllegalArgumentException e) {
+                callback = MenuCallback.DEFAULT;
+            }
+            callbackHandlerResolver.getHandler(callback).handle(update);
+        } finally {
+            telegramService.answerCallback(update.getCallbackQuery().getId());
+        }
     }
 }

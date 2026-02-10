@@ -13,9 +13,6 @@ spring:
 telegram:
   bot-token: "TEST_TOKEN"
 
-app:
-  init-db-on-startup: false
-
 scheduler:
   shutdowns:
     fixed-delay-ms: 2

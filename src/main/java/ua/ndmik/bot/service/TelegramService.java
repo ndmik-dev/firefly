@@ -5,6 +5,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -117,6 +118,18 @@ public class TelegramService {
             telegramClient.execute(editMessage);
         } catch (TelegramApiException e) {
             log.error("Exception while editing message, chatId={}, messageId={}", message.chatId(), message.messageId(), e);
+        }
+    }
+
+    public void answerCallback(String callbackQueryId) {
+        AnswerCallbackQuery answerCallbackQuery = AnswerCallbackQuery
+                .builder()
+                .callbackQueryId(callbackQueryId)
+                .build();
+        try {
+            telegramClient.execute(answerCallbackQuery);
+        } catch (TelegramApiException e) {
+            log.error("Exception while answering callbackQueryId={}", callbackQueryId, e);
         }
     }
 

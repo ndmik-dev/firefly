@@ -25,7 +25,6 @@ Required:
 Optional:
 - `SPRING_DATASOURCE_URL` - overrides DB URL (default: `jdbc:sqlite:src/main/resources/db/app.db`)
 - `scheduler.shutdowns.fixed-delay-ms` - schedule polling interval in minutes (default: `10`)
-- `app.init-db-on-startup` - run initial schedule load on startup (default: `true`)
 
 ## Run Locally
 1. Set token in `.env` or export it:
