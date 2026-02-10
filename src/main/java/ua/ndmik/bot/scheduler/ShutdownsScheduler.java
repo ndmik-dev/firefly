@@ -55,7 +55,7 @@ public class ShutdownsScheduler {
         }
         log.info("Starting fetch schedules");
         ScheduleResponse scheduleResponse = dtekClient.getSchedules();
-        log.info("Schedules extracted, data={}", scheduleResponse);
+        log.info("Schedules extracted, data={}", toJson(scheduleResponse));
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
         Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
@@ -157,5 +157,14 @@ public class ShutdownsScheduler {
         //TODO: uncomment
         schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
+    }
+
+    private String toJson(Object value) {
+        try {
+            return mapper.writeValueAsString(value);
+        } catch (RuntimeException e) {
+            log.warn("Failed to serialize payload to JSON, type={}", value.getClass().getSimpleName());
+            return String.valueOf(value);
+        }
     }
 }
