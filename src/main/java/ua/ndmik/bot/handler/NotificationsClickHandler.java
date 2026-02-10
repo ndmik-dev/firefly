@@ -25,11 +25,14 @@ public class NotificationsClickHandler implements CallbackHandler {
                 .ifPresent(user -> {
                     user.setNotificationEnabled(!user.isNotificationEnabled());
                     userRepository.save(user);
+                    String header = user.isNotificationEnabled()
+                            ? "🔔 Сповіщення увімкнено"
+                            : "🔕 Сповіщення вимкнено";
                     int messageId = update.getCallbackQuery().getMessage().getMessageId();
                     Message message = new Message(
                             messageId,
                             chatId,
-                            telegramService.formatMessage(user, ""),
+                            telegramService.formatMessage(user, header),
                             telegramService.buildMainMenuMarkup(user)
                     );
                     telegramService.editMessage(message);

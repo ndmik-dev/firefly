@@ -26,7 +26,7 @@ public class GroupClickHandler implements CallbackHandler {
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         user.setTmpGroupId(groupId);
         userRepository.save(user);
-        regionHandler.reprint(update, groupId, "Натисність Готово");
+        regionHandler.reprint(update, groupId, "✅ Групу обрано. Натисніть «✅ Підтвердити», щоб зберегти вибір.");
     }
 
     private String extractGroupIdFromCallbackData(String data) {

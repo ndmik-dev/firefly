@@ -24,12 +24,12 @@ public class GroupSelectionHandler implements CallbackHandler {
     public void handle(Update update) {
         InlineKeyboardRow regions = new InlineKeyboardRow(
                 List.of(
-                        telegramService.button("Київ (поки не робе)", KYIV.name()),
-                        telegramService.button("Київщина", REGION.name())
+                        telegramService.button("🏙️ Київ (незабаром)", KYIV.name()),
+                        telegramService.button("🏘️ Київщина", REGION.name())
                 ));
         InlineKeyboardRow back = new InlineKeyboardRow(
                 List.of(
-                        telegramService.button("Назад", REGIONS_BACK.name())
+                        telegramService.button("⬅️ Назад", REGIONS_BACK.name())
                 ));
         InlineKeyboardMarkup menu = telegramService.menu(List.of(regions, back));
 
@@ -38,7 +38,7 @@ public class GroupSelectionHandler implements CallbackHandler {
         Message message = new Message(
                 messageId,
                 chatId,
-                "Оберіть групу відключень",
+                "🧭 Оберіть ваш регіон, щоб налаштувати групу відключень.",
                 menu
         );
         telegramService.editMessage(message);

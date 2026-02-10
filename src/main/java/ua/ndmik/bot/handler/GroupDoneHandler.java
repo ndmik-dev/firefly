@@ -43,7 +43,7 @@ public class GroupDoneHandler implements CallbackHandler {
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         String groupId = user.getTmpGroupId();
         if (groupId == null) {
-            regionHandler.reprint(update, null, "! Ви не обрали групу відключень");
+            regionHandler.reprint(update, null, "⚠️ Щоб зберегти вибір, спочатку оберіть групу зі списку нижче.");
             return;
         }
         user.setGroupId(groupId);
@@ -53,7 +53,7 @@ public class GroupDoneHandler implements CallbackHandler {
         Message message = new Message(
                 messageId,
                 chatId,
-                telegramService.formatMessage(user, ""),
+                telegramService.formatMessage(user, "✅ Групу відключень збережено"),
                 telegramService.buildMainMenuMarkup(user)
         );
         telegramService.editMessage(message);

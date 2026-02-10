@@ -47,8 +47,8 @@ public class RegionHandler implements CallbackHandler {
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
         rows.add(new InlineKeyboardRow(List.of(
-                telegramService.button("Назад", GROUP_BACK.name()),
-                telegramService.button("✅ Готово", GROUP_DONE.name()))
+                telegramService.button("⬅️ Назад", GROUP_BACK.name()),
+                telegramService.button("✅ Підтвердити", GROUP_DONE.name()))
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
 
@@ -56,7 +56,7 @@ public class RegionHandler implements CallbackHandler {
         Message message = new Message(
                 messageId,
                 chatId,
-                "Виберіть групу",
+                "🧩 Оберіть вашу групу відключень.\n\nПісля вибору натисніть «✅ Підтвердити».",
                 menu
         );
         telegramService.editMessage(message);
@@ -74,8 +74,8 @@ public class RegionHandler implements CallbackHandler {
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
         rows.add(new InlineKeyboardRow(List.of(
-                telegramService.button("Назад", GROUP_BACK.name()),
-                telegramService.button("✅ Готово", GROUP_DONE.name()))
+                telegramService.button("⬅️ Назад", GROUP_BACK.name()),
+                telegramService.button("✅ Підтвердити", GROUP_DONE.name()))
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
 

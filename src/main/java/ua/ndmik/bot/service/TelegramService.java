@@ -39,9 +39,9 @@ public class TelegramService {
     private final DtekShutdownsService dtekService;
 
     public static String GREETING = """
-                ⚡️ DTEK
-                
-                Оберіть групу та керуйте сповіщеннями.
+                ⚡️ <b>Firefly • Графіки відключень DTEK</b>
+
+                Вітаю! Оберіть вашу групу, щоб отримувати актуальний графік і керувати сповіщеннями.
                 """;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
@@ -61,18 +61,6 @@ public class TelegramService {
                 null,
                 user.getChatId(),
                 GREETING,
-                menu
-        );
-        sendNewMessage(message);
-    }
-
-    public void sendMessage(UserSettings user) {
-        String text = formatMessage(user, null);
-        InlineKeyboardMarkup menu = buildMainMenuMarkup(user);
-        Message message = new Message(
-                null,
-                user.getChatId(),
-                text,
                 menu
         );
         sendNewMessage(message);
@@ -136,8 +124,9 @@ public class TelegramService {
     public String formatMessage(UserSettings user, String header) {
         String template = """
                 %s
-                🧩 Група: %s
-                🔔 Сповіщення: %s
+                ⚙️ <b>Ваші налаштування</b>
+                🧩 Група відключень: <b>%s</b>
+                🔔 Сповіщення: <b>%s</b>
 
                 %s
                 """;
@@ -145,10 +134,11 @@ public class TelegramService {
                 ? (header + "\n\n")
                 : "";
         String groupId = user.getGroupId();
+        String displayGroupId = formatGroupInfo(groupId);
         String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
         String shutdowns = dtekService.getShutdownsMessage(schedules);
-        return String.format(template, header, groupId, notificationStatus, shutdowns);
+        return String.format(template, header, displayGroupId, notificationStatus, shutdowns);
     }
 
     private UserSettings getOrCreateUser(Update update) {
@@ -221,5 +211,11 @@ public class TelegramService {
         return isEnabled
                 ? "✅ Увімкнено"
                 : "❌ Вимкнено";
+    }
+
+    private String formatGroupInfo(String groupId) {
+        return Strings.isBlank(groupId)
+                ? "❗ Не обрано"
+                : groupId;
     }
 }
