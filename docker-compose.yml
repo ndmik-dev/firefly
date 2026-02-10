@@ -6,8 +6,8 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       SPRING_DATASOURCE_URL: jdbc:sqlite:/app/db/app.db
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - /opt/firefly/db:/app/db
     logging:
