@@ -66,6 +66,9 @@ public class ShutdownsScheduler {
         Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
         compareAndUpdate(oldSchedules, newSchedules);
         List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
+        if (updatedGroupIds.isEmpty()) {
+            log.info("Nothing has change, any updates.");
+        }
         updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
     }
 
@@ -159,6 +162,7 @@ public class ShutdownsScheduler {
         schedulesToSave.addAll(rolledSchedules);
         schedulesToSave.addAll(emptyTomorrowSchedules);
         scheduleRepository.saveAll(schedulesToSave);
+        log.info("Schedules were rolled over");
     }
 
     private void processGroupUpdate(String groupId, boolean tomorrowArrived) {
