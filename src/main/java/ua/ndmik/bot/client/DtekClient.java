@@ -1,6 +1,11 @@
 package ua.ndmik.bot.client;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.Cookie;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitUntilState;
@@ -14,6 +19,7 @@ import ua.ndmik.bot.model.ScheduleResponse;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
@@ -26,18 +32,20 @@ import static util.ScheduleParser.parseScheduleFromHtml;
 public class DtekClient {
 
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
+    private static final String SHUTDOWNS_URL = DTEK_KREM_URL + SHUTDOWNS_PATH;
     private static final int NAVIGATION_TIMEOUT_MS = 45_000;
     private static final int NETWORK_IDLE_WAIT_MS = 5_000;
+    private static final int FETCH_ATTEMPTS = 3;
+    private static final Set<String> ROBOT_BLOCK_MARKERS = Set.of("noindex,nofollow", "noindex, nofollow");
 
     private final RestClient restClient;
-    private volatile String cachedCookies;
 
     public DtekClient(RestClient restClient) {
         this.restClient = restClient;
     }
 
     public Optional<ScheduleResponse> getSchedules() {
-        String html = fetchHtmlWithRetry();
+        String html = fetchHtml();
         if (isBlockedOrMissing(html)) {
             log.warn("Failed to fetch valid schedules after retry, skipping this cycle.");
             return Optional.empty();
@@ -50,23 +58,23 @@ public class DtekClient {
         }
     }
 
-    private String fetchHtmlWithRetry() {
-        String html = executeRequest();
-        if (!isBlockedOrMissing(html)) {
-            return html;
+    private String fetchHtml() {
+        String html = null;
+        for (int attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
+            html = executeRequest();
+            if (!isBlockedOrMissing(html)) {
+                return html;
+            }
+            if (attempt < FETCH_ATTEMPTS) {
+                log.warn("Some error during schedule extracting. Retrying with fresh cookies.");
+            }
         }
-        log.warn("Some error during schedule extracting, trying to fetch cookies.");
-        if (!refreshCookies()) {
-            return html;
-        }
-        return executeRequest();
+        return html;
     }
 
     private String executeRequest() {
         RestClient.RequestHeadersSpec<?> request = restClient.get().uri(SHUTDOWNS_PATH);
-        if (cachedCookies != null && !cachedCookies.isBlank()) {
-            request = request.header(HttpHeaders.COOKIE, cachedCookies);
-        }
+        request = addCookiesHeaderIfPresent(request);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {
                 log.warn("Client error during executing request statusCode={}, body={}", res.getStatusCode(), res.getBody());
@@ -76,42 +84,46 @@ public class DtekClient {
         });
     }
 
-    private boolean refreshCookies() {
-        String freshCookies = retrieveCookies();
-        if (freshCookies == null || freshCookies.isBlank()) {
-            log.warn("Cookies were not retrieved, keeping previous cookie cache.");
-            return false;
+    private RestClient.RequestHeadersSpec<?> addCookiesHeaderIfPresent(RestClient.RequestHeadersSpec<?> request) {
+        Optional<String> cookies = retrieveCookies();
+        if (cookies.isPresent() && !cookies.get().isBlank()) {
+            return request.header(HttpHeaders.COOKIE, cookies.get());
         }
-        cachedCookies = freshCookies;
-        return true;
+        return request;
     }
 
-    private String retrieveCookies() {
+    private Optional<String> retrieveCookies() {
         log.info("Retrieving cookies");
         try (Playwright playwright = Playwright.create()) {
             try (Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
                  BrowserContext context = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT_HEADER));
                  Page page = context.newPage()) {
-                page.navigate(DTEK_KREM_URL + SHUTDOWNS_PATH,
-                        new Page.NavigateOptions()
-                                .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
-                                .setTimeout((double) NAVIGATION_TIMEOUT_MS)
-                );
-                try {
-                    page.waitForLoadState(LoadState.NETWORKIDLE,
-                            new Page.WaitForLoadStateOptions().setTimeout(NETWORK_IDLE_WAIT_MS));
-                } catch (PlaywrightException e) {
-                    log.debug("Network idle was not reached quickly while retrieving cookies: {}", e.getMessage());
-                }
-
+                navigateForCookies(page);
                 List<Cookie> cookies = context.cookies();
-                return cookies.stream()
+                String cookieHeader = cookies.stream()
                         .map(c -> c.name + "=" + c.value)
                         .collect(Collectors.joining("; "));
+                return cookieHeader.isBlank()
+                        ? Optional.empty()
+                        : Optional.of(cookieHeader);
             }
         } catch (RuntimeException e) {
             log.warn("Failed to retrieve cookies", e);
-            return null;
+            return Optional.empty();
+        }
+    }
+
+    private void navigateForCookies(Page page) {
+        page.navigate(SHUTDOWNS_URL,
+                new Page.NavigateOptions()
+                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+                        .setTimeout(NAVIGATION_TIMEOUT_MS)
+        );
+        try {
+            page.waitForLoadState(LoadState.NETWORKIDLE,
+                    new Page.WaitForLoadStateOptions().setTimeout(NETWORK_IDLE_WAIT_MS));
+        } catch (PlaywrightException e) {
+            log.debug("Network idle was not reached quickly while retrieving cookies: {}", e.getMessage());
         }
     }
 
@@ -129,6 +141,6 @@ public class DtekClient {
 
     private boolean isRobotBlock(String html) {
         String normalized = html.toLowerCase(Locale.ROOT);
-        return normalized.contains("noindex,nofollow") || normalized.contains("noindex, nofollow");
+        return ROBOT_BLOCK_MARKERS.stream().anyMatch(normalized::contains);
     }
 }

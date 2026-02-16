@@ -67,7 +67,7 @@ public class ShutdownsScheduler {
         compareAndUpdate(oldSchedules, newSchedules);
         List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
         if (updatedGroupIds.isEmpty()) {
-            log.info("Nothing has change, any updates.");
+            log.info("Nothing has changed, any updates.");
         }
         updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
     }
