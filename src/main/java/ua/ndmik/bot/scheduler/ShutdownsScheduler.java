@@ -54,7 +54,12 @@ public class ShutdownsScheduler {
             return;
         }
         log.info("Starting fetch schedules");
-        ScheduleResponse scheduleResponse = dtekClient.getSchedules();
+        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getSchedules();
+        if (scheduleResponseOpt.isEmpty()) {
+            log.warn("Failed to fetch schedules, skipping current run.");
+            return;
+        }
+        ScheduleResponse scheduleResponse = scheduleResponseOpt.get();
         log.info("Schedules extracted, data={}", toJson(scheduleResponse));
         List<Schedule> oldSchedules = scheduleRepository.findAll();
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
