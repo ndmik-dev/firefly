@@ -54,6 +54,40 @@ The app starts on port `8080`.
 ./gradlew build
 ```
 
+## YASNO Address Lookup Script
+Script: `scripts/yasno_group_by_address.sh`
+
+Purpose:
+- Resolve Kyiv outage group by address via YASNO API in 3 steps:
+  1. `street` lookup
+  2. `house` lookup
+  3. `group` lookup
+
+Prerequisites:
+- `httpie` (`http` command)
+- `jq`
+
+Usage:
+```bash
+./scripts/yasno_group_by_address.sh 'вул. Богдана Хмельницького, 11'
+```
+
+Also valid:
+```bash
+./scripts/yasno_group_by_address.sh 'вул. Богдана Хмельницького 11'
+```
+
+Optional params:
+```bash
+./scripts/yasno_group_by_address.sh '<address>' [region_id] [dso_id]
+```
+- Default `region_id=25`
+- Default `dso_id=902`
+
+Output:
+- `stdout`: resolved group id (`group` or `group.subgroup`, for example `29.1`)
+- `stderr`: debug info with raw HTTP responses for `streets`, `houses`, and `group`, plus resolved `streetId`/`houseId`
+
 ## Docker
 Build local image:
 
