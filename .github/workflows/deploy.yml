@@ -1,8 +1,9 @@
-name: Deploy
+name: Build and Deploy
 
 on:
-  push:
-    branches: [ "dev" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [closed]
 
 permissions:
   contents: read
@@ -10,10 +11,13 @@ permissions:
 
 jobs:
   build-and-deploy:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up JDK
         uses: actions/setup-java@v4

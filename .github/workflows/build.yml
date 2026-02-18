@@ -2,8 +2,7 @@ name: Build
 
 on:
   push:
-    branches:
-      - main # to not run for now
+  pull_request:
 
 jobs:
   build:
@@ -12,14 +11,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
-          distribution: 'temurin'
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
 
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
