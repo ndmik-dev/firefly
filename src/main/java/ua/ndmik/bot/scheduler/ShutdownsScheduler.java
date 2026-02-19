@@ -26,6 +26,8 @@ import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
 @Service
 @Slf4j
 public class ShutdownsScheduler {
+    private static final String TOMORROW_SCHEDULE_APPEARED_MESSAGE = "📅 Графік на завтра зʼявився";
+    private static final String SCHEDULE_CHANGED_MESSAGE = "🔄 Графік змінився";
 
     private final DtekClient dtekClient;
     private final ScheduleRepository scheduleRepository;
@@ -169,10 +171,10 @@ public class ShutdownsScheduler {
         List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
         if (tomorrowArrived) {
             log.info("Tomorrow schedule appeared for groupId={}. Sending updates", groupId);
-            users.forEach(user -> telegramService.sendUpdate(user, "📅 Графік на завтра зʼявився"));
+            users.forEach(user -> telegramService.sendUpdate(user, TOMORROW_SCHEDULE_APPEARED_MESSAGE));
         } else {
             log.info("Schedule changed for groupId={}. Sending updates", groupId);
-            users.forEach(user -> telegramService.sendUpdate(user, null));
+            users.forEach(user -> telegramService.sendUpdate(user, SCHEDULE_CHANGED_MESSAGE));
         }
         List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
         schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
