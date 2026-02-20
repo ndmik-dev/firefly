@@ -11,6 +11,7 @@ Telegram bot built with Spring Boot that fetches DTEK outage schedules and sends
 
 ## Features
 - `/start` flow with interactive inline menu
+- Admin stats commands: `/stats_today`, `/stats_week`
 - Region/group selection and persistence per chat
 - Notification toggle per user
 - Scheduled refresh of outage schedules
@@ -25,6 +26,7 @@ Required:
 Optional:
 - `SPRING_DATASOURCE_URL` - overrides DB URL (default: `jdbc:sqlite:src/main/resources/db/app.db`)
 - `scheduler.shutdowns.fixed-delay-ms` - schedule polling interval in minutes (default: `10`)
+- `TELEGRAM_ADMIN_CHAT_IDS` - comma-separated admin chat IDs allowed to use `/stats_*` commands
 
 ## Run Locally
 1. Set token in `.env` or export it:
