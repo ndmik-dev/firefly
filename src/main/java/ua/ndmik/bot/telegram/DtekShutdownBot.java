@@ -50,9 +50,17 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     }
 
     private void handleMessage(Update update) {
-        String text = update.getMessage().getText();
-        if (text.equals("/start")) {
+        String text = update.getMessage().getText().trim();
+        if (isCommand(text, "/start")) {
             telegramService.sendGreeting(update);
+            return;
+        }
+        if (isCommand(text, "/stats_today")) {
+            telegramService.sendTodayStats(update.getMessage().getChatId());
+            return;
+        }
+        if (isCommand(text, "/stats_week")) {
+            telegramService.sendWeeklyStats(update.getMessage().getChatId());
         }
     }
 
@@ -70,5 +78,9 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
         } finally {
             telegramService.answerCallback(update.getCallbackQuery().getId());
         }
+    }
+
+    private boolean isCommand(String text, String command) {
+        return text.equals(command) || text.startsWith(command + "@");
     }
 }

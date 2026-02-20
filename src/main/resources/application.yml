@@ -35,8 +35,17 @@ server:
 
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN}
+  admin-chat-ids: ${TELEGRAM_ADMIN_CHAT_IDS:}
 
 scheduler:
   shutdowns:
     fixed-delay-ms: 10
     time-zone: Europe/Kyiv
+
+yasno:
+  lookup:
+    enabled: false
+    region-id: 25
+    dso-id: 902
+    street-query: ""
+    house-query: ""

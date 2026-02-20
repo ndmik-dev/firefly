@@ -6,7 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
 
-import static util.Constants.DTEK_KREM_URL;
+import static ua.ndmik.bot.util.Constants.DTEK_KREM_URL;
 
 @Configuration
 @EnableScheduling
