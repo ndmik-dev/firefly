@@ -178,7 +178,7 @@ public class TelegramService {
                 %s
                 """;
         header = Strings.isNotBlank(header)
-                ? (header + "\n\n")
+                ? (header + "\n")
                 : "";
         String groupId = user.getGroupId();
         String displayGroupId = formatGroupInfo(groupId);
