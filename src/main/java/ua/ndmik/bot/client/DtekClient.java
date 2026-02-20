@@ -23,9 +23,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
-import static util.Constants.DTEK_KREM_URL;
-import static util.Constants.SHUTDOWNS_PATH;
-import static util.ScheduleParser.parseScheduleFromHtml;
+import static ua.ndmik.bot.util.Constants.DTEK_KREM_URL;
+import static ua.ndmik.bot.util.Constants.SHUTDOWNS_PATH;
+import static ua.ndmik.bot.util.ScheduleParser.parseScheduleFromHtml;
 
 @Service
 @Slf4j

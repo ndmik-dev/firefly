@@ -21,8 +21,10 @@ import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,8 @@ public class TelegramService {
     private final UserSettingsRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final DtekShutdownsService dtekService;
+    private final StatsService statsService;
+    private final Set<Long> adminChatIds;
 
     public static String GREETING = """
                 ⚡️ <b>Firefly • Графіки відключень ДТЕК</b>
@@ -46,13 +50,17 @@ public class TelegramService {
                 """;
 
     public TelegramService(@Value("${telegram.bot-token}") String botToken,
+                           @Value("${telegram.admin-chat-ids:}") String adminChatIdsRaw,
                            UserSettingsRepository userRepository,
                            ScheduleRepository scheduleRepository,
-                           DtekShutdownsService dtekService) {
+                           DtekShutdownsService dtekService,
+                           StatsService statsService) {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.userRepository = userRepository;
         this.scheduleRepository = scheduleRepository;
         this.dtekService = dtekService;
+        this.statsService = statsService;
+        this.adminChatIds = parseAdminChatIds(adminChatIdsRaw);
     }
 
     public void sendGreeting(Update update) {
@@ -74,10 +82,45 @@ public class TelegramService {
                 formatMessage(user, header),
                 buildMainMenuMarkup(user)
         );
+        boolean sent = sendNewMessage(message);
+        if (sent) {
+            statsService.recordNotificationSent();
+        } else {
+            statsService.recordNotificationFailed();
+        }
+    }
+
+    public void sendTodayStats(long chatId) {
+        if (!isAdminChat(chatId)) {
+            sendText(chatId, "⛔️ Команда доступна тільки адміну.");
+            return;
+        }
+        sendText(chatId, statsService.buildTodayStatsMessage());
+    }
+
+    public void sendWeeklyStats(long chatId) {
+        if (!isAdminChat(chatId)) {
+            sendText(chatId, "⛔️ Команда доступна тільки адміну.");
+            return;
+        }
+        sendText(chatId, statsService.buildWeeklyStatsMessage());
+    }
+
+    public void sendDailySummaryToAdmins() {
+        if (adminChatIds.isEmpty()) {
+            log.debug("No admin chat IDs configured, skipping daily summary.");
+            return;
+        }
+        String summary = statsService.buildTodayStatsMessage();
+        adminChatIds.forEach(chatId -> sendText(chatId, summary));
+    }
+
+    private void sendText(long chatId, String text) {
+        Message message = new Message(null, chatId, text, null);
         sendNewMessage(message);
     }
 
-    private void sendNewMessage(Message message) {
+    private boolean sendNewMessage(Message message) {
         SendMessage sendMessage = SendMessage
                 .builder()
                 .text(message.text())
@@ -88,8 +131,10 @@ public class TelegramService {
         try {
             log.info("Sending message to chatId={}", message.chatId());
             telegramClient.execute(sendMessage);
+            return true;
         } catch (TelegramApiException e) {
             log.error("Exception while sending message, chatId={}", message.chatId(), e);
+            return false;
         }
     }
 
@@ -133,7 +178,7 @@ public class TelegramService {
                 %s
                 """;
         header = Strings.isNotBlank(header)
-                ? (header + "\n\n")
+                ? (header + "\n")
                 : "";
         String groupId = user.getGroupId();
         String displayGroupId = formatGroupInfo(groupId);
@@ -154,10 +199,12 @@ public class TelegramService {
 
     private UserSettings createNewUser(Long chatId) {
         log.info("Creating new user with chatId={}", chatId);
-        return userRepository.save(UserSettings.builder()
+        UserSettings user = userRepository.save(UserSettings.builder()
                 .chatId(chatId)
                 .isNotificationEnabled(true)
                 .build());
+        statsService.recordNewUser();
+        return user;
     }
 
     public InlineKeyboardMarkup buildMainMenuMarkup(UserSettings user) {
@@ -219,5 +266,30 @@ public class TelegramService {
         return Strings.isBlank(groupId)
                 ? "❗ Не обрано"
                 : groupId;
+    }
+
+    private boolean isAdminChat(long chatId) {
+        return adminChatIds.contains(chatId);
+    }
+
+    private Set<Long> parseAdminChatIds(String raw) {
+        if (Strings.isBlank(raw)) {
+            return Set.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(Strings::isNotBlank)
+                .map(this::parseAdminChatId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private Long parseAdminChatId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid telegram.admin-chat-ids value skipped: {}", value);
+            return null;
+        }
     }
 }

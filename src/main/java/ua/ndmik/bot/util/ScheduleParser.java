@@ -1,4 +1,4 @@
-package util;
+package ua.ndmik.bot.util;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;

@@ -11,4 +11,6 @@ public interface UserSettingsRepository extends CrudRepository<UserSettings, Lon
     Optional<UserSettings> findByChatId(Long id);
     boolean existsByChatId(Long id);
     List<UserSettings> findByGroupIdAndIsNotificationEnabledTrue(String id);
+    long countByGroupIdIsNotNull();
+    long countByIsNotificationEnabledTrue();
 }
