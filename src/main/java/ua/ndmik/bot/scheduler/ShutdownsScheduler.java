@@ -7,7 +7,6 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
-import ua.ndmik.bot.model.HourState;
 import ua.ndmik.bot.model.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -20,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
+import static ua.ndmik.bot.util.ScheduleStateUtils.isAllDayWithPower;
 
 @Service
 @Slf4j
@@ -98,9 +98,7 @@ public class ShutdownsScheduler {
 
     private boolean isScheduleEmpty(String scheduleJson) {
         Map<String, String> scheduleMap = mapper.readValue(scheduleJson, new TypeReference<>() {});
-        return scheduleMap.values()
-                .stream()
-                .allMatch(HourState.YES.getValue()::equals);
+        return isAllDayWithPower(scheduleMap);
     }
 
     private void compareAndUpdate(List<Schedule> oldSchedules, List<Schedule> newSchedules) {

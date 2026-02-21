@@ -9,7 +9,6 @@ import java.util.Optional;
 public interface UserSettingsRepository extends CrudRepository<UserSettings, Long> {
 
     Optional<UserSettings> findByChatId(Long id);
-    boolean existsByChatId(Long id);
     List<UserSettings> findByGroupIdAndIsNotificationEnabledTrue(String id);
     long countByGroupIdIsNotNull();
     long countByIsNotificationEnabledTrue();

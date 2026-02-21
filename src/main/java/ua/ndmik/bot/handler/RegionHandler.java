@@ -35,41 +35,22 @@ public class RegionHandler implements CallbackHandler {
         long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
-        String userGroupId = user.getGroupId();
-        List<String> groupIds = scheduleRepository.findDistinctGroupIds()
-                .stream()
-                .sorted()
-                .toList();
-        List<InlineKeyboardButton> buttons = groupIds.stream()
-                .map(groupId -> telegramService.button(
-                        formatButton(groupId, userGroupId), GROUP_CLICK.name() + ":" + groupId)
-                )
-                .toList();
-        List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
-        rows.add(new InlineKeyboardRow(List.of(
-                telegramService.button("⬅️ Назад", GROUP_BACK.name()),
-                telegramService.button("✅ Підтвердити", GROUP_DONE.name()))
-        ));
-        InlineKeyboardMarkup menu = telegramService.menu(rows);
-
-        int messageId = update.getCallbackQuery().getMessage().getMessageId();
-        Message message = new Message(
-                messageId,
-                chatId,
-                "🧩 Оберіть вашу групу відключень.\n\nПісля вибору натисніть «✅ Підтвердити».",
-                menu
-        );
-        telegramService.editMessage(message);
+        editGroupSelection(update, user.getGroupId(),
+                "🧩 Оберіть вашу групу відключень.\n\nПісля вибору натисніть «✅ Підтвердити».");
     }
 
     public void reprint(Update update, String userGroupId, String text) {
+        editGroupSelection(update, userGroupId, text);
+    }
+
+    private void editGroupSelection(Update update, String selectedGroupId, String text) {
         List<String> groupIds = scheduleRepository.findDistinctGroupIds()
                 .stream()
                 .sorted()
                 .toList();
         List<InlineKeyboardButton> buttons = groupIds.stream()
                 .map(groupId -> telegramService.button(
-                        formatButton(groupId, userGroupId), GROUP_CLICK.name() + ":" + groupId)
+                        formatButton(groupId, selectedGroupId), GROUP_CLICK.name() + ":" + groupId)
                 )
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);

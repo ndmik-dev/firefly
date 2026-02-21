@@ -10,6 +10,7 @@ import ua.ndmik.bot.repository.UserSettingsRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Service
 public class StatsService {
@@ -28,22 +29,22 @@ public class StatsService {
 
     @Transactional
     public synchronized void recordNewUser() {
-        DailyStats stats = getOrCreate(today());
-        stats.setNewUsers(stats.getNewUsers() + 1);
-        dailyStatsRepository.save(stats);
+        incrementTodayStats(stats -> stats.setNewUsers(stats.getNewUsers() + 1));
     }
 
     @Transactional
     public synchronized void recordNotificationSent() {
-        DailyStats stats = getOrCreate(today());
-        stats.setNotificationsSent(stats.getNotificationsSent() + 1);
-        dailyStatsRepository.save(stats);
+        incrementTodayStats(stats -> stats.setNotificationsSent(stats.getNotificationsSent() + 1));
     }
 
     @Transactional
     public synchronized void recordNotificationFailed() {
+        incrementTodayStats(stats -> stats.setNotificationsFailed(stats.getNotificationsFailed() + 1));
+    }
+
+    private void incrementTodayStats(Consumer<DailyStats> mutator) {
         DailyStats stats = getOrCreate(today());
-        stats.setNotificationsFailed(stats.getNotificationsFailed() + 1);
+        mutator.accept(stats);
         dailyStatsRepository.save(stats);
     }
 

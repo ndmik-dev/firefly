@@ -16,6 +16,7 @@ import java.util.Map;
 
 import static ua.ndmik.bot.model.entity.ScheduleDay.TODAY;
 import static ua.ndmik.bot.model.entity.ScheduleDay.TOMORROW;
+import static ua.ndmik.bot.util.ScheduleStateUtils.isAllDayWithPower;
 
 @Service
 public class DtekShutdownsService {
@@ -46,16 +47,10 @@ public class DtekShutdownsService {
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
         Map<String, String> hourStateMap = mapper.readValue(schedule.getSchedule(), new TypeReference<>() {});
-        if (isScheduleEmpty(hourStateMap)) {
+        if (isAllDayWithPower(hourStateMap)) {
             return Map.of();
         }
         return getShutdownIntervals(hourStateMap);
-    }
-
-    private boolean isScheduleEmpty(Map<String, String> schedule) {
-        return schedule.values()
-                .stream()
-                .allMatch(HourState.YES.getValue()::equals);
     }
 
     private Map<LocalTime, LocalTime> getShutdownIntervals(Map<String, String> hourStateMap) {
