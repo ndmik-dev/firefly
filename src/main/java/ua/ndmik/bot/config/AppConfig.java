@@ -12,6 +12,8 @@ import static ua.ndmik.bot.util.Constants.DTEK_KREM_URL;
 @EnableScheduling
 public class AppConfig {
 
+    private static final String YASNO_BASE_URL = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2";
+
     private static final String ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
     private static final String ACCEPT_LANGUAGE_HEADER = "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,uk;q=0.6";
     private static final String CACHE_CONTROL_HEADER = "max-age=0";
@@ -20,7 +22,7 @@ public class AppConfig {
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36";
 
     @Bean
-    public RestClient restClient() {
+    public RestClient dtekRestClient() {
         return RestClient.builder()
                 .baseUrl(DTEK_KREM_URL)
                 .defaultHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
@@ -30,5 +32,13 @@ public class AppConfig {
                 .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT_HEADER)
                 .build();
 
+    }
+
+    @Bean
+    public RestClient yasnoRestClient() {
+        return RestClient.builder()
+                .baseUrl(YASNO_BASE_URL)
+                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
+                .build();
     }
 }

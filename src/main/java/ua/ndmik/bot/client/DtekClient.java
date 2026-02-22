@@ -12,6 +12,7 @@ import com.microsoft.playwright.options.WaitUntilState;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import ua.ndmik.bot.model.ScheduleResponse;
@@ -38,10 +39,10 @@ public class DtekClient {
     private static final int FETCH_ATTEMPTS = 3;
     private static final Set<String> ROBOT_BLOCK_MARKERS = Set.of("noindex,nofollow", "noindex, nofollow");
 
-    private final RestClient restClient;
+    private final RestClient dtekClient;
 
-    public DtekClient(RestClient restClient) {
-        this.restClient = restClient;
+    public DtekClient(@Qualifier("dtekRestClient") RestClient dtekClient) {
+        this.dtekClient = dtekClient;
     }
 
     public Optional<ScheduleResponse> getSchedules() {
@@ -73,7 +74,7 @@ public class DtekClient {
     }
 
     private String executeRequest() {
-        RestClient.RequestHeadersSpec<?> request = restClient.get().uri(SHUTDOWNS_PATH);
+        RestClient.RequestHeadersSpec<?> request = dtekClient.get().uri(SHUTDOWNS_PATH);
         request = addCookiesHeaderIfPresent(request);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {

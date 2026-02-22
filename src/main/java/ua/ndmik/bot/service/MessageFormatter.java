@@ -1,6 +1,7 @@
 package ua.ndmik.bot.service;
 
 import org.springframework.stereotype.Service;
+import ua.ndmik.bot.model.LightInterval;
 
 import java.time.LocalTime;
 import java.time.LocalDate;
@@ -16,7 +17,6 @@ public class MessageFormatter {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
     private static final int MINUTES_PER_DAY = 24 * 60;
 
-    //TODO: debug and refactor, rm extra code
     public String format(Map<LocalTime, LocalTime> todayShutdowns,
                          Map<LocalTime, LocalTime> tomorrowShutdowns,
                          LocalDate today) {
@@ -43,11 +43,11 @@ public class MessageFormatter {
         for (LightInterval interval : intervals) {
             sb.append("✅ ")
                     .append("<b>")
-                    .append(formatMinutes(interval.startMinutes, false))
+                    .append(formatMinutes(interval.startMinutes(), false))
                     .append("</b>")
                     .append("–")
                     .append("<b>")
-                    .append(formatMinutes(interval.endMinutes, true))
+                    .append(formatMinutes(interval.endMinutes(), true))
                     .append("</b>")
                     .append('\n');
         }
@@ -89,6 +89,4 @@ public class MessageFormatter {
     private int toMinutes(LocalTime time) {
         return time.getHour() * 60 + time.getMinute();
     }
-
-    private record LightInterval(int startMinutes, int endMinutes) {}
 }

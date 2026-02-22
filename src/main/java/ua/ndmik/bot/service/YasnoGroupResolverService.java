@@ -2,7 +2,8 @@ package ua.ndmik.bot.service;
 
 import org.springframework.stereotype.Service;
 import ua.ndmik.bot.client.YasnoClient;
-import ua.ndmik.bot.client.YasnoClient.AddressItem;
+import ua.ndmik.bot.model.AddressItem;
+import ua.ndmik.bot.model.ResolvedYasnoGroup;
 
 import java.util.List;
 import java.util.Locale;
@@ -73,19 +74,8 @@ public class YasnoGroupResolverService {
         }
         return value.toLowerCase(Locale.ROOT)
                 .replace("вул.", "")
-                .replace("улица", "")
+                .replace("вулиця", "")
                 .replace("street", "")
                 .trim();
-    }
-
-    public record ResolvedYasnoGroup(
-            int regionId,
-            int dsoId,
-            long streetId,
-            String streetName,
-            long houseId,
-            String houseName,
-            String groupId
-    ) {
     }
 }
