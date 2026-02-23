@@ -24,7 +24,6 @@ public class AppConfig {
     @Bean
     public RestClient dtekRestClient() {
         return RestClient.builder()
-                .baseUrl(DTEK_KREM_URL)
                 .defaultHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
                 .defaultHeader(HttpHeaders.ACCEPT_LANGUAGE, ACCEPT_LANGUAGE_HEADER)
                 .defaultHeader(HttpHeaders.CACHE_CONTROL, CACHE_CONTROL_HEADER)

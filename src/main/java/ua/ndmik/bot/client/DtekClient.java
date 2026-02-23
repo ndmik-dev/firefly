@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.ScheduleResponse;
 
 import java.util.List;
@@ -24,8 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
-import static ua.ndmik.bot.util.Constants.DTEK_KREM_URL;
-import static ua.ndmik.bot.util.Constants.SHUTDOWNS_PATH;
 import static ua.ndmik.bot.util.ScheduleParser.parseScheduleFromHtml;
 
 @Service
@@ -33,7 +32,6 @@ import static ua.ndmik.bot.util.ScheduleParser.parseScheduleFromHtml;
 public class DtekClient {
 
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
-    private static final String SHUTDOWNS_URL = DTEK_KREM_URL + SHUTDOWNS_PATH;
     private static final int NAVIGATION_TIMEOUT_MS = 45_000;
     private static final int NETWORK_IDLE_WAIT_MS = 5_000;
     private static final int FETCH_ATTEMPTS = 3;
@@ -46,36 +44,51 @@ public class DtekClient {
     }
 
     public Optional<ScheduleResponse> getSchedules() {
-        String html = fetchHtml();
+        return getSchedules(DtekArea.KYIV_REGION);
+    }
+
+    public Optional<ScheduleResponse> getKyivSchedules() {
+        return getSchedules(DtekArea.KYIV);
+    }
+
+    public Optional<ScheduleResponse> getKyivRegionSchedules() {
+        return getSchedules(DtekArea.KYIV_REGION);
+    }
+
+    private Optional<ScheduleResponse> getSchedules(DtekArea area) {
+        String html = fetchHtml(area);
         if (isBlockedOrMissing(html)) {
-            log.warn("Failed to fetch valid schedules after retry, skipping this cycle.");
+            log.warn("Failed to fetch valid schedules after retry for area={}, skipping this cycle.", area);
             return Optional.empty();
         }
         try {
             return Optional.of(parseScheduleFromHtml(html));
         } catch (RuntimeException e) {
-            log.warn("Failed to parse schedules from response", e);
+            log.warn("Failed to parse schedules from response for area={}", area, e);
             return Optional.empty();
         }
     }
 
-    private String fetchHtml() {
+    private String fetchHtml(DtekArea area) {
         String html = null;
         for (int attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
-            html = executeRequest();
+            html = executeRequest(area);
             if (!isBlockedOrMissing(html)) {
                 return html;
             }
             if (attempt < FETCH_ATTEMPTS) {
-                log.warn("Some error during schedule extracting. Retrying with fresh cookies.");
+                log.warn("Some error during schedule extracting for area={}. Retrying with fresh cookies.", area);
             }
         }
         return html;
     }
 
-    private String executeRequest() {
-        RestClient.RequestHeadersSpec<?> request = dtekClient.get().uri(SHUTDOWNS_PATH);
-        request = addCookiesHeaderIfPresent(request);
+    private String executeRequest(DtekArea area) {
+        RestClient.RequestHeadersSpec<?> request = dtekClient.get()
+                .uri(area.getShutdownsUrl())
+                .header(HttpHeaders.REFERER, area.getShutdownsUrl())
+                .header("Origin", area.getBaseUrl());
+        request = addCookiesHeaderIfPresent(request, area);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {
                 log.warn("Client error during executing request statusCode={}, body={}", res.getStatusCode(), res.getBody());
@@ -85,21 +98,21 @@ public class DtekClient {
         });
     }
 
-    private RestClient.RequestHeadersSpec<?> addCookiesHeaderIfPresent(RestClient.RequestHeadersSpec<?> request) {
-        Optional<String> cookies = retrieveCookies();
+    private RestClient.RequestHeadersSpec<?> addCookiesHeaderIfPresent(RestClient.RequestHeadersSpec<?> request, DtekArea area) {
+        Optional<String> cookies = retrieveCookies(area);
         if (cookies.isPresent() && !cookies.get().isBlank()) {
             return request.header(HttpHeaders.COOKIE, cookies.get());
         }
         return request;
     }
 
-    private Optional<String> retrieveCookies() {
-        log.info("Retrieving cookies");
+    private Optional<String> retrieveCookies(DtekArea area) {
+        log.info("Retrieving cookies for area={}", area);
         try (Playwright playwright = Playwright.create()) {
             try (Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
                  BrowserContext context = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT_HEADER));
                  Page page = context.newPage()) {
-                navigateForCookies(page);
+                navigateForCookies(page, area);
                 List<Cookie> cookies = context.cookies();
                 String cookieHeader = cookies.stream()
                         .map(c -> c.name + "=" + c.value)
@@ -109,13 +122,13 @@ public class DtekClient {
                         : Optional.of(cookieHeader);
             }
         } catch (RuntimeException e) {
-            log.warn("Failed to retrieve cookies", e);
+            log.warn("Failed to retrieve cookies for area={}", area, e);
             return Optional.empty();
         }
     }
 
-    private void navigateForCookies(Page page) {
-        page.navigate(SHUTDOWNS_URL,
+    private void navigateForCookies(Page page, DtekArea area) {
+        page.navigate(area.getShutdownsUrl(),
                 new Page.NavigateOptions()
                         .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
                         .setTimeout(NAVIGATION_TIMEOUT_MS)
