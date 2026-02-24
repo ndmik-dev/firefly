@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import ua.ndmik.bot.model.DtekArea;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +21,9 @@ public class Schedule {
 
     @Id
     private String groupId;
+    @Id
+    @Enumerated(EnumType.STRING)
+    private DtekArea area;
     @Id
     @Enumerated(EnumType.STRING)
     private ScheduleDay scheduleDay;
