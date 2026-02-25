@@ -60,7 +60,7 @@ public class StatsService {
     public String buildWeeklyStatsMessage() {
         LocalDate to = today();
         LocalDate from = to.minusDays(6);
-        List<DailyStats> weeklyStats = dailyStatsRepository.findByStatDateBetweenOrderByStatDateAsc(from, to);
+        List<DailyStats> weeklyStats = dailyStatsRepository.findRange(from, to);
 
         long newUsers = weeklyStats.stream().mapToLong(DailyStats::getNewUsers).sum();
         long sent = weeklyStats.stream().mapToLong(DailyStats::getNotificationsSent).sum();
@@ -78,8 +78,8 @@ public class StatsService {
                 : (sent * 100.0) / attempts;
 
         long totalUsers = userSettingsRepository.count();
-        long usersWithGroup = userSettingsRepository.countByGroupIdIsNotNull();
-        long usersWithNotifications = userSettingsRepository.countByIsNotificationEnabledTrue();
+        long usersWithGroup = userSettingsRepository.countWithGroup();
+        long usersWithNotifications = userSettingsRepository.countWithNotifications();
 
         return """
                 📊 <b>Статистика %s</b>

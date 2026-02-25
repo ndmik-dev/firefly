@@ -44,7 +44,7 @@ public class RegionHandler implements CallbackHandler {
     }
 
     private void editGroupSelection(Update update, String selectedGroupId, String text) {
-        List<String> groupIds = scheduleRepository.findDistinctGroupIds()
+        List<String> groupIds = scheduleRepository.findGroupIds()
                 .stream()
                 .sorted()
                 .toList();
