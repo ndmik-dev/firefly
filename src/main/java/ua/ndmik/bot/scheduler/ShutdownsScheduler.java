@@ -7,6 +7,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import ua.ndmik.bot.client.DtekClient;
 import ua.ndmik.bot.converter.ScheduleResponseConverter;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -53,21 +54,48 @@ public class ShutdownsScheduler {
             log.info("Scheduler skipped (blocked window 23:55-00:05)");
             return;
         }
-        log.info("Starting fetch schedules");
-        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getSchedules();
+        log.info("Shutdowns Scheduler started");
+        processKyivShutdowns();
+        processRegionShutdowns();
+        log.info("Shutdowns Scheduler finished");
+    }
+
+    private void processKyivShutdowns() {
+        log.info("Starting fetch schedules for Kyiv");
+        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getKyivSchedules();
         if (scheduleResponseOpt.isEmpty()) {
-            log.warn("Failed to fetch schedules, skipping current run.");
+            log.warn("Failed to fetch schedules for Kyiv, skipping current run.");
             return;
         }
         ScheduleResponse scheduleResponse = scheduleResponseOpt.get();
-        log.info("Schedules extracted, data={}", toJson(scheduleResponse));
+        log.info("Schedules for Kyiv extracted, data={}", toJson(scheduleResponse));
         List<Schedule> oldSchedules = scheduleRepository.findAll();
-        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse);
+        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, DtekArea.KYIV);
         Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
         compareAndUpdate(oldSchedules, newSchedules);
         List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
         if (updatedGroupIds.isEmpty()) {
-            log.info("Nothing has changed, any updates.");
+            log.info("Nothing has changed for Kyiv, any updates.");
+        }
+        updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
+    }
+
+    private void processRegionShutdowns() {
+        log.info("Starting fetch schedules for Kyiv Region");
+        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getKyivRegionSchedules();
+        if (scheduleResponseOpt.isEmpty()) {
+            log.warn("Failed to fetch schedules for Kyiv Region, skipping current run.");
+            return;
+        }
+        ScheduleResponse scheduleResponse = scheduleResponseOpt.get();
+        log.info("Schedules for Kyiv Region extracted, data={}", toJson(scheduleResponse));
+        List<Schedule> oldSchedules = scheduleRepository.findAll();
+        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, DtekArea.KYIV_REGION);
+        Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
+        compareAndUpdate(oldSchedules, newSchedules);
+        List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
+        if (updatedGroupIds.isEmpty()) {
+            log.info("Nothing has changed for Kyiv Region, any updates.");
         }
         updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
     }
@@ -115,6 +143,7 @@ public class ShutdownsScheduler {
 
     private Optional<Schedule> findSchedule(List<Schedule> oldSchedules, Schedule newSchedule) {
         return oldSchedules.stream()
+                .filter(schedule -> schedule.getArea().equals(newSchedule.getArea()))
                 .filter(schedule -> schedule.getScheduleDay().equals(newSchedule.getScheduleDay()))
                 .filter(schedule -> schedule.getGroupId().equals(newSchedule.getGroupId()))
                 .findFirst();
@@ -122,7 +151,7 @@ public class ShutdownsScheduler {
 
     private void updateExistingSchedule(Schedule oldSchedule, Schedule newSchedule) {
         if (!oldSchedule.getSchedule().equals(newSchedule.getSchedule())) {
-            log.info("Updating existing schedule for gpoupId={}, scheduleDay={}, oldSchedule={}, newSchedule={}",
+            log.info("Updating existing schedule for groupId={}, scheduleDay={}, oldSchedule={}, newSchedule={}",
                     oldSchedule.getGroupId(),
                     oldSchedule.getScheduleDay(),
                     oldSchedule,

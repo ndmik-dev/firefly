@@ -2,6 +2,7 @@ package ua.ndmik.bot.converter;
 
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.GroupSchedule;
 import ua.ndmik.bot.model.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
@@ -26,7 +27,7 @@ public class ScheduleResponseConverter {
         this.mapper = new JsonMapper();
     }
 
-    public List<Schedule> toSchedules(ScheduleResponse response) {
+    public List<Schedule> toSchedules(ScheduleResponse response, DtekArea area) {
         List<Schedule> schedules = new ArrayList<>();
         LocalDateTime lastUpdate = parseLastUpdate(response.update());
         String todayId = response.today();
@@ -37,7 +38,7 @@ public class ScheduleResponseConverter {
                 .map(Map.Entry::getValue)
                 .map(GroupSchedule::getGroupSchedules)
                 .flatMap(entry -> entry.entrySet().stream())
-                .map(entry -> buildSchedule(entry, ScheduleDay.TODAY, lastUpdate))
+                .map(entry -> buildSchedule(entry, ScheduleDay.TODAY, area, lastUpdate))
                 .forEach(schedules::add);
 
         response.data().entrySet().stream()
@@ -45,7 +46,7 @@ public class ScheduleResponseConverter {
                 .map(Map.Entry::getValue)
                 .map(GroupSchedule::getGroupSchedules)
                 .flatMap(entry -> entry.entrySet().stream())
-                .map(entry -> buildSchedule(entry, ScheduleDay.TOMORROW, lastUpdate))
+                .map(entry -> buildSchedule(entry, ScheduleDay.TOMORROW, area, lastUpdate))
                 .forEach(schedules::add);
 
         return schedules;
@@ -53,6 +54,7 @@ public class ScheduleResponseConverter {
 
     private Schedule buildSchedule(Map.Entry<String, Map<String, String>> entry,
                                    ScheduleDay day,
+                                   DtekArea area,
                                    LocalDateTime lastUpdate) {
         String groupId = entry.getKey();
         Map<String, String> schedule = entry.getValue();
@@ -60,6 +62,7 @@ public class ScheduleResponseConverter {
                 .schedule(mapper.writeValueAsString(schedule))
                 .groupId(groupId.replaceAll("[^0-9.]", ""))
                 .scheduleDay(day)
+                .area(area)
                 .lastUpdate(lastUpdate)
                 .needToNotify(Boolean.TRUE)
                 .build();

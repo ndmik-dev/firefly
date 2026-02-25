@@ -43,10 +43,6 @@ public class DtekClient {
         this.dtekClient = dtekClient;
     }
 
-    public Optional<ScheduleResponse> getSchedules() {
-        return getSchedules(DtekArea.KYIV_REGION);
-    }
-
     public Optional<ScheduleResponse> getKyivSchedules() {
         return getSchedules(DtekArea.KYIV);
     }
