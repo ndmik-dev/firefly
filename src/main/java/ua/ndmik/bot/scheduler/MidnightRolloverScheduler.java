@@ -38,6 +38,7 @@ public class MidnightRolloverScheduler {
         scheduleRepository.deleteByDay(TOMORROW);
         List<Schedule> rolledSchedules = tomorrowSchedules.stream()
                 .map(schedule -> Schedule.builder()
+                        .area(schedule.getArea())
                         .groupId(schedule.getGroupId())
                         .scheduleDay(TODAY)
                         .schedule(schedule.getSchedule())
@@ -47,6 +48,7 @@ public class MidnightRolloverScheduler {
                 .toList();
         List<Schedule> emptyTomorrowSchedules = tomorrowSchedules.stream()
                 .map(schedule -> Schedule.builder()
+                        .area(schedule.getArea())
                         .groupId(schedule.getGroupId())
                         .scheduleDay(TOMORROW)
                         .schedule(buildAllYesScheduleJson())

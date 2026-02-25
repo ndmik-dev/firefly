@@ -3,6 +3,7 @@ package ua.ndmik.bot.handler;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
@@ -28,11 +29,13 @@ public class GroupDoneHandler implements CallbackHandler {
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         String groupId = user.getTmpGroupId();
+        DtekArea area = user.getTmpArea();
         if (groupId == null) {
             regionHandler.reprint(update, null, "⚠️ Щоб зберегти вибір, спочатку оберіть групу зі списку нижче.");
             return;
         }
         user.setGroupId(groupId);
+        user.setArea(area);
         userRepository.save(user);
 
         int messageId = update.getCallbackQuery().getMessage().getMessageId();

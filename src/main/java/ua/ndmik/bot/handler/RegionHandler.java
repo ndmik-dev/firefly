@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
@@ -35,6 +36,8 @@ public class RegionHandler implements CallbackHandler {
         long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        user.setTmpArea(DtekArea.KYIV_REGION);
+        userRepository.save(user);
         editGroupSelection(update, user.getGroupId(),
                 "🧩 Оберіть вашу групу відключень.\n\nПісля вибору натисніть «✅ Підтвердити».");
     }
