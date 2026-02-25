@@ -57,6 +57,7 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
     @Query(value = """
             SELECT DISTINCT group_id
             FROM schedules
+            WHERE area = :area
             """, nativeQuery = true)
-    List<String> findGroupIds();
+    List<String> findGroupIdsByArea(@Param("area") DtekArea area);
 }

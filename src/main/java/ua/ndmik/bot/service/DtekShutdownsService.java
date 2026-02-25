@@ -46,10 +46,15 @@ public class DtekShutdownsService {
     }
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
+        if (schedule == null) {
+            return Map.of();
+        }
+
         Map<String, String> hourStateMap = mapper.readValue(schedule.getSchedule(), new TypeReference<>() {});
         if (isAllDayWithPower(hourStateMap)) {
             return Map.of();
         }
+
         return getShutdownIntervals(hourStateMap);
     }
 

@@ -47,7 +47,8 @@ public class RegionHandler implements CallbackHandler {
     }
 
     private void editGroupSelection(Update update, String selectedGroupId, String text) {
-        List<String> groupIds = scheduleRepository.findGroupIds()
+        long chatId = getChatId(update);
+        List<String> groupIds = scheduleRepository.findGroupIdsByArea(DtekArea.KYIV_REGION)
                 .stream()
                 .sorted()
                 .toList();
@@ -63,7 +64,6 @@ public class RegionHandler implements CallbackHandler {
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
 
-        long chatId = getChatId(update);
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         Message message = new Message(
                 messageId,

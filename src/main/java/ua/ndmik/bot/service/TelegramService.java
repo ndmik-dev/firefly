@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -175,7 +176,7 @@ public class TelegramService {
         String groupId = user.getGroupId();
         String displayGroupId = formatGroupInfo(groupId);
         String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
-        List<Schedule> schedules = scheduleRepository.findByGroup(groupId);
+        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, user.getArea());
         String shutdowns = dtekService.getShutdownsMessage(schedules);
         return String.format(template, header, displayGroupId, notificationStatus, shutdowns);
     }
