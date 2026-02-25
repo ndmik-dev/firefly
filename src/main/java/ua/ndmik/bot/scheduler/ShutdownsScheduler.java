@@ -1,6 +1,7 @@
 package ua.ndmik.bot.scheduler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
@@ -16,6 +17,7 @@ import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -34,18 +36,21 @@ public class ShutdownsScheduler {
     private final ScheduleResponseConverter converter;
     private final TelegramService telegramService;
     private final JsonMapper mapper;
+    private final ZoneId zoneId;
 
     public ShutdownsScheduler(DtekClient dtekClient,
                               ScheduleRepository scheduleRepository,
                               UserSettingsRepository userRepository,
                               ScheduleResponseConverter converter,
-                              TelegramService telegramService) {
+                              TelegramService telegramService,
+                              @Value("${scheduler.shutdowns.time-zone:Europe/Kyiv}") String timeZone) {
         this.dtekClient = dtekClient;
         this.scheduleRepository = scheduleRepository;
         this.userRepository = userRepository;
         this.converter = converter;
         this.telegramService = telegramService;
         this.mapper = new JsonMapper();
+        this.zoneId = ZoneId.of(timeZone);
     }
 
     @Scheduled(fixedDelayString = "${scheduler.shutdowns.fixed-delay-ms}", timeUnit = TimeUnit.MINUTES)
@@ -55,53 +60,40 @@ public class ShutdownsScheduler {
             return;
         }
         log.info("Shutdowns Scheduler started");
-        processKyivShutdowns();
-        processRegionShutdowns();
+        processShutdownsForArea(DtekArea.KYIV);
+        processShutdownsForArea(DtekArea.KYIV_REGION);
         log.info("Shutdowns Scheduler finished");
     }
 
-    private void processKyivShutdowns() {
-        log.info("Starting fetch schedules for Kyiv");
-        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getKyivSchedules();
+    private void processShutdownsForArea(DtekArea area) {
+        log.info("Starting fetch schedules for area={}", area);
+        Optional<ScheduleResponse> scheduleResponseOpt = fetchSchedules(area);
         if (scheduleResponseOpt.isEmpty()) {
-            log.warn("Failed to fetch schedules for Kyiv, skipping current run.");
+            log.warn("Failed to fetch schedules for area={}, skipping current run.", area);
             return;
         }
         ScheduleResponse scheduleResponse = scheduleResponseOpt.get();
-        log.info("Schedules for Kyiv extracted, data={}", toJson(scheduleResponse));
+        log.info("Schedules for area={} extracted, data={}", area, toJson(scheduleResponse));
         List<Schedule> oldSchedules = scheduleRepository.findAll();
-        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, DtekArea.KYIV);
+        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, area);
         Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
         compareAndUpdate(oldSchedules, newSchedules);
-        List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
+        List<String> updatedGroupIds = scheduleRepository.findNotifyGroupIdsByArea(area);
         if (updatedGroupIds.isEmpty()) {
-            log.info("Nothing has changed for Kyiv, any updates.");
+            log.info("Nothing has changed for area={}, any updates.", area);
         }
-        updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
+        updatedGroupIds.forEach(groupId -> processGroupUpdate(area, groupId, tomorrowAppearedIds.contains(groupId)));
     }
 
-    private void processRegionShutdowns() {
-        log.info("Starting fetch schedules for Kyiv Region");
-        Optional<ScheduleResponse> scheduleResponseOpt = dtekClient.getKyivRegionSchedules();
-        if (scheduleResponseOpt.isEmpty()) {
-            log.warn("Failed to fetch schedules for Kyiv Region, skipping current run.");
-            return;
-        }
-        ScheduleResponse scheduleResponse = scheduleResponseOpt.get();
-        log.info("Schedules for Kyiv Region extracted, data={}", toJson(scheduleResponse));
-        List<Schedule> oldSchedules = scheduleRepository.findAll();
-        List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, DtekArea.KYIV_REGION);
-        Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
-        compareAndUpdate(oldSchedules, newSchedules);
-        List<String> updatedGroupIds = scheduleRepository.findAllGroupIdsByNeedToNotifyTrue();
-        if (updatedGroupIds.isEmpty()) {
-            log.info("Nothing has changed for Kyiv Region, any updates.");
-        }
-        updatedGroupIds.forEach(groupId -> processGroupUpdate(groupId, tomorrowAppearedIds.contains(groupId)));
+    private Optional<ScheduleResponse> fetchSchedules(DtekArea area) {
+        return switch (area) {
+            case KYIV -> dtekClient.getKyivSchedules();
+            case KYIV_REGION -> dtekClient.getKyivRegionSchedules();
+        };
     }
 
     private boolean isBlockedWindow() {
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(zoneId);
         LocalTime start = LocalTime.of(23, 55);
         LocalTime end = LocalTime.of(0, 5);
         return now.isAfter(start) || now.isBefore(end);
@@ -125,8 +117,16 @@ public class ShutdownsScheduler {
     }
 
     private boolean isScheduleEmpty(String scheduleJson) {
-        Map<String, String> scheduleMap = mapper.readValue(scheduleJson, new TypeReference<>() {});
-        return isAllDayWithPower(scheduleMap);
+        if (scheduleJson == null || scheduleJson.isBlank()) {
+            return true;
+        }
+        try {
+            Map<String, String> scheduleMap = mapper.readValue(scheduleJson, new TypeReference<>() {});
+            return isAllDayWithPower(scheduleMap);
+        } catch (RuntimeException e) {
+            log.warn("Invalid schedule payload, treating as empty. payload={}", scheduleJson);
+            return true;
+        }
     }
 
     private void compareAndUpdate(List<Schedule> oldSchedules, List<Schedule> newSchedules) {
@@ -160,16 +160,16 @@ public class ShutdownsScheduler {
         }
     }
 
-    private void processGroupUpdate(String groupId, boolean tomorrowArrived) {
-        List<UserSettings> users = userRepository.findByGroupIdAndIsNotificationEnabledTrue(groupId);
+    private void processGroupUpdate(DtekArea area, String groupId, boolean tomorrowArrived) {
+        List<UserSettings> users = userRepository.findNotifiableByGroupAndArea(groupId, area);
         if (tomorrowArrived) {
-            log.info("Tomorrow schedule appeared for groupId={}. Sending updates", groupId);
+            log.info("Tomorrow schedule appeared for area={}, groupId={}. Sending updates", area, groupId);
             users.forEach(user -> telegramService.sendUpdate(user, TOMORROW_SCHEDULE_APPEARED_MESSAGE));
         } else {
-            log.info("Schedule changed for groupId={}. Sending updates", groupId);
+            log.info("Schedule changed for area={}, groupId={}. Sending updates", area, groupId);
             users.forEach(user -> telegramService.sendUpdate(user, SCHEDULE_CHANGED_MESSAGE));
         }
-        List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
+        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, area);
         schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
     }
