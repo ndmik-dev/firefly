@@ -7,59 +7,53 @@ import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
 @Component
-public class GroupClickHandler implements CallbackHandler {
+public class GroupPageHandler implements CallbackHandler {
 
-    private final UserSettingsRepository userRepository;
     private final RegionHandler regionHandler;
+    private final UserSettingsRepository userRepository;
 
-    public GroupClickHandler(UserSettingsRepository userRepository,
-                             RegionHandler regionHandler) {
-        this.userRepository = userRepository;
+    public GroupPageHandler(RegionHandler regionHandler,
+                            UserSettingsRepository userRepository) {
         this.regionHandler = regionHandler;
+        this.userRepository = userRepository;
     }
 
     @Override
     public void handle(Update update) {
         long chatId = getChatId(update);
         String data = update.getCallbackQuery().getData();
-        SelectionPayload payload = parsePayload(data);
+        PagePayload payload = parsePayload(data);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
-        user.setTmpGroupId(payload.groupId());
-        user.setTmpArea(payload.area());
-        userRepository.save(user);
         regionHandler.reprint(
                 update,
-                payload.groupId(),
-                "✅ Групу обрано. Натисніть «✅ Підтвердити», щоб зберегти вибір.",
+                user.getTmpGroupId() != null ? user.getTmpGroupId() : user.getGroupId(),
+                RegionHandler.GROUP_SELECTION_TEXT,
                 payload.area(),
                 payload.page()
         );
     }
 
-    private SelectionPayload parsePayload(String data) {
+    private PagePayload parsePayload(String data) {
         String[] parts = data.split(":");
-        String groupId = parts.length > 1 ? parts[1] : "";
         DtekArea area = DtekArea.KYIV_REGION;
         int page = 0;
 
+        if (parts.length > 1) {
+            try {
+                area = DtekArea.valueOf(parts[1]);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         if (parts.length > 2) {
             try {
-                area = DtekArea.valueOf(parts[2]);
-            } catch (IllegalArgumentException ignored) {
-                area = DtekArea.KYIV_REGION;
-            }
-        }
-        if (parts.length > 3) {
-            try {
-                page = Integer.parseInt(parts[3]);
+                page = Integer.parseInt(parts[2]);
             } catch (NumberFormatException ignored) {
-                page = 0;
             }
         }
-        return new SelectionPayload(groupId, area, Math.max(page, 0));
+        return new PagePayload(area, Math.max(page, 0));
     }
 
-    private record SelectionPayload(String groupId, DtekArea area, int page) {
+    private record PagePayload(DtekArea area, int page) {
     }
 }

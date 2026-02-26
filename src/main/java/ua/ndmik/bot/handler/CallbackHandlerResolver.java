@@ -15,6 +15,7 @@ public class CallbackHandlerResolver {
                                    RegionHandler regionHandler,
                                    KyivHandler kyivHandler,
                                    GroupClickHandler groupClickHandler,
+                                   GroupPageHandler groupPageHandler,
                                    GroupDoneHandler groupDoneHandler,
                                    NotificationsClickHandler notificationsClickHandler,
                                    GroupSelectionHandler groupSelectionHandler,
@@ -28,6 +29,7 @@ public class CallbackHandlerResolver {
         handlers.put(MenuCallback.REGIONS_BACK, regionsBackHandler);
         handlers.put(MenuCallback.NOTIFICATION_CLICK, notificationsClickHandler);
         handlers.put(MenuCallback.GROUP_CLICK, groupClickHandler);
+        handlers.put(MenuCallback.GROUP_PAGE, groupPageHandler);
         handlers.put(MenuCallback.GROUP_DONE, groupDoneHandler);
         handlers.put(MenuCallback.GROUP_BACK, groupBackHandler);
         handlers.put(MenuCallback.GROUP_SELECTION, groupSelectionHandler);
