@@ -1,5 +1,6 @@
 package ua.ndmik.bot.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -9,6 +10,7 @@ import ua.ndmik.bot.model.entity.Schedule;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,10 +25,13 @@ public class DtekShutdownsService {
 
     private final JsonMapper mapper;
     private final MessageFormatter messageFormatter;
+    private final ZoneId zoneId;
 
-    public DtekShutdownsService(MessageFormatter messageFormatter) {
+    public DtekShutdownsService(MessageFormatter messageFormatter,
+                                @Value("${scheduler.shutdowns.time-zone:Europe/Kyiv}") String timeZone) {
         this.mapper = new JsonMapper();
         this.messageFormatter = messageFormatter;
+        this.zoneId = ZoneId.of(timeZone);
     }
 
     public String getShutdownsMessage(List<Schedule> schedules) {
@@ -42,7 +47,7 @@ public class DtekShutdownsService {
         Map<LocalTime, LocalTime> todayShutdowns = getShutdowns(todaySchedule);
         Map<LocalTime, LocalTime> tomorrowShutdowns = getShutdowns(tomorrowSchedule);
 
-        return messageFormatter.format(todayShutdowns, tomorrowShutdowns, LocalDate.now());
+        return messageFormatter.format(todayShutdowns, tomorrowShutdowns, LocalDate.now(zoneId));
     }
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
