@@ -28,7 +28,7 @@ public class GroupPageHandler implements CallbackHandler {
         regionHandler.reprint(
                 update,
                 user.getTmpGroupId() != null ? user.getTmpGroupId() : user.getGroupId(),
-                RegionHandler.GROUP_SELECTION_TEXT,
+                AbstractAreaGroupHandler.GROUP_SELECTION_TEXT,
                 payload.area(),
                 payload.page()
         );
