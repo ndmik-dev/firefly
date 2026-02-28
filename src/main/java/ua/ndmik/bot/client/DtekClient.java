@@ -1,30 +1,18 @@
 package ua.ndmik.bot.client;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.PlaywrightException;
-import com.microsoft.playwright.options.Cookie;
-import com.microsoft.playwright.options.LoadState;
-import com.microsoft.playwright.options.WaitUntilState;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.ScheduleResponse;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static ua.ndmik.bot.config.AppConfig.USER_AGENT_HEADER;
 import static ua.ndmik.bot.util.ScheduleParser.parseScheduleFromHtml;
 
 @Service
@@ -32,15 +20,16 @@ import static ua.ndmik.bot.util.ScheduleParser.parseScheduleFromHtml;
 public class DtekClient {
 
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
-    private static final int NAVIGATION_TIMEOUT_MS = 45_000;
-    private static final int NETWORK_IDLE_WAIT_MS = 5_000;
     private static final int FETCH_ATTEMPTS = 3;
     private static final Set<String> ROBOT_BLOCK_MARKERS = Set.of("noindex,nofollow", "noindex, nofollow");
 
     private final RestClient dtekClient;
+    private final DtekCookieProvider cookieProvider;
 
-    public DtekClient(@Qualifier("dtekRestClient") RestClient dtekClient) {
+    public DtekClient(@Qualifier("dtekRestClient") RestClient dtekClient,
+                      DtekCookieProvider cookieProvider) {
         this.dtekClient = dtekClient;
+        this.cookieProvider = cookieProvider;
     }
 
     public Optional<ScheduleResponse> getKyivSchedules() {
@@ -68,23 +57,26 @@ public class DtekClient {
     private String fetchHtml(DtekArea area) {
         String html = null;
         for (int attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
-            html = executeRequest(area);
+            boolean attachCookies = attempt > 1;
+            html = executeRequest(area, attachCookies);
             if (!isBlockedOrMissing(html)) {
                 return html;
             }
             if (attempt < FETCH_ATTEMPTS) {
-                log.warn("Some error during schedule extracting for area={}. Retrying with fresh cookies.", area);
+                log.warn("Some error during schedule extracting for area={}. Retrying, attachCookies={}",
+                        area,
+                        attachCookies);
             }
         }
         return html;
     }
 
-    private String executeRequest(DtekArea area) {
+    private String executeRequest(DtekArea area, boolean attachCookies) {
         RestClient.RequestHeadersSpec<?> request = dtekClient.get()
                 .uri(area.getShutdownsUrl())
                 .header(HttpHeaders.REFERER, area.getShutdownsUrl())
                 .header("Origin", area.getBaseUrl());
-        request = addCookiesHeaderIfPresent(request, area);
+        request = addCookiesHeaderIfPresent(request, area, attachCookies);
         return request.exchange((_, res) -> {
             if (res.getStatusCode().is4xxClientError()) {
                 log.warn("Client error during executing request statusCode={}, body={}", res.getStatusCode(), res.getBody());
@@ -94,47 +86,17 @@ public class DtekClient {
         });
     }
 
-    private RestClient.RequestHeadersSpec<?> addCookiesHeaderIfPresent(RestClient.RequestHeadersSpec<?> request, DtekArea area) {
-        Optional<String> cookies = retrieveCookies(area);
+    private RestClient.RequestHeadersSpec<?> addCookiesHeaderIfPresent(RestClient.RequestHeadersSpec<?> request,
+                                                                       DtekArea area,
+                                                                       boolean attachCookies) {
+        if (!attachCookies) {
+            return request;
+        }
+        Optional<String> cookies = cookieProvider.getCookies(area);
         if (cookies.isPresent() && !cookies.get().isBlank()) {
             return request.header(HttpHeaders.COOKIE, cookies.get());
         }
         return request;
-    }
-
-    private Optional<String> retrieveCookies(DtekArea area) {
-        log.info("Retrieving cookies for area={}", area);
-        try (Playwright playwright = Playwright.create()) {
-            try (Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-                 BrowserContext context = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT_HEADER));
-                 Page page = context.newPage()) {
-                navigateForCookies(page, area);
-                List<Cookie> cookies = context.cookies();
-                String cookieHeader = cookies.stream()
-                        .map(c -> c.name + "=" + c.value)
-                        .collect(Collectors.joining("; "));
-                return cookieHeader.isBlank()
-                        ? Optional.empty()
-                        : Optional.of(cookieHeader);
-            }
-        } catch (RuntimeException e) {
-            log.warn("Failed to retrieve cookies for area={}", area, e);
-            return Optional.empty();
-        }
-    }
-
-    private void navigateForCookies(Page page, DtekArea area) {
-        page.navigate(area.getShutdownsUrl(),
-                new Page.NavigateOptions()
-                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
-                        .setTimeout(NAVIGATION_TIMEOUT_MS)
-        );
-        try {
-            page.waitForLoadState(LoadState.NETWORKIDLE,
-                    new Page.WaitForLoadStateOptions().setTimeout(NETWORK_IDLE_WAIT_MS));
-        } catch (PlaywrightException e) {
-            log.debug("Network idle was not reached quickly while retrieving cookies: {}", e.getMessage());
-        }
     }
 
     private boolean isBlockedOrMissing(String html) {
