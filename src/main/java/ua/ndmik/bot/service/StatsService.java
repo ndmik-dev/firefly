@@ -10,6 +10,7 @@ import ua.ndmik.bot.repository.UserSettingsRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Service
 public class StatsService {
@@ -28,22 +29,22 @@ public class StatsService {
 
     @Transactional
     public synchronized void recordNewUser() {
-        DailyStats stats = getOrCreate(today());
-        stats.setNewUsers(stats.getNewUsers() + 1);
-        dailyStatsRepository.save(stats);
+        incrementTodayStats(stats -> stats.setNewUsers(stats.getNewUsers() + 1));
     }
 
     @Transactional
     public synchronized void recordNotificationSent() {
-        DailyStats stats = getOrCreate(today());
-        stats.setNotificationsSent(stats.getNotificationsSent() + 1);
-        dailyStatsRepository.save(stats);
+        incrementTodayStats(stats -> stats.setNotificationsSent(stats.getNotificationsSent() + 1));
     }
 
     @Transactional
     public synchronized void recordNotificationFailed() {
+        incrementTodayStats(stats -> stats.setNotificationsFailed(stats.getNotificationsFailed() + 1));
+    }
+
+    private void incrementTodayStats(Consumer<DailyStats> mutator) {
         DailyStats stats = getOrCreate(today());
-        stats.setNotificationsFailed(stats.getNotificationsFailed() + 1);
+        mutator.accept(stats);
         dailyStatsRepository.save(stats);
     }
 
@@ -59,7 +60,7 @@ public class StatsService {
     public String buildWeeklyStatsMessage() {
         LocalDate to = today();
         LocalDate from = to.minusDays(6);
-        List<DailyStats> weeklyStats = dailyStatsRepository.findByStatDateBetweenOrderByStatDateAsc(from, to);
+        List<DailyStats> weeklyStats = dailyStatsRepository.findRange(from, to);
 
         long newUsers = weeklyStats.stream().mapToLong(DailyStats::getNewUsers).sum();
         long sent = weeklyStats.stream().mapToLong(DailyStats::getNotificationsSent).sum();
@@ -77,8 +78,8 @@ public class StatsService {
                 : (sent * 100.0) / attempts;
 
         long totalUsers = userSettingsRepository.count();
-        long usersWithGroup = userSettingsRepository.countByGroupIdIsNotNull();
-        long usersWithNotifications = userSettingsRepository.countByIsNotificationEnabledTrue();
+        long usersWithGroup = userSettingsRepository.countWithGroup();
+        long usersWithNotifications = userSettingsRepository.countWithNotifications();
 
         return """
                 📊 <b>Статистика %s</b>

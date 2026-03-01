@@ -33,11 +33,12 @@ public class MidnightRolloverScheduler {
     @Scheduled(cron = "0 0 0 * * *", zone = "${scheduler.shutdowns.time-zone:Europe/Kyiv}")
     public void rolloverSchedulesAtMidnight() {
         log.info("Running daily schedule rollover");
-        scheduleRepository.deleteByScheduleDay(TODAY);
-        List<Schedule> tomorrowSchedules = scheduleRepository.findAllByScheduleDay(TOMORROW);
-        scheduleRepository.deleteByScheduleDay(TOMORROW);
+        scheduleRepository.deleteByDay(TODAY);
+        List<Schedule> tomorrowSchedules = scheduleRepository.findByDay(TOMORROW);
+        scheduleRepository.deleteByDay(TOMORROW);
         List<Schedule> rolledSchedules = tomorrowSchedules.stream()
                 .map(schedule -> Schedule.builder()
+                        .area(schedule.getArea())
                         .groupId(schedule.getGroupId())
                         .scheduleDay(TODAY)
                         .schedule(schedule.getSchedule())
@@ -47,6 +48,7 @@ public class MidnightRolloverScheduler {
                 .toList();
         List<Schedule> emptyTomorrowSchedules = tomorrowSchedules.stream()
                 .map(schedule -> Schedule.builder()
+                        .area(schedule.getArea())
                         .groupId(schedule.getGroupId())
                         .scheduleDay(TOMORROW)
                         .schedule(buildAllYesScheduleJson())

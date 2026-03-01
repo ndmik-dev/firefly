@@ -2,17 +2,14 @@ package ua.ndmik.bot.util;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
 import ua.ndmik.bot.model.ScheduleResponse;
 
-@Service
 public class ScheduleParser {
 
     private static final String SHUTDOWNS_SCRIPT = "script:containsData(DisconSchedule.fact)";
     private static final String SCHEDULES_KEY = "DisconSchedule.fact";
 
-    //TODO: retry on exception
     public static ScheduleResponse parseScheduleFromHtml(String html) {
         if (html == null || html.isBlank()) {
             throw new IllegalStateException("Empty response from DTEK");
@@ -23,7 +20,7 @@ public class ScheduleParser {
         if (script == null) {
             throw new IllegalStateException("DisconSchedule.fact not found");
         }
-        String scheduleJson = ScheduleParser.parseSchedule(script.data());
+        String scheduleJson = parseSchedule(script.data());
         return new JsonMapper().readValue(scheduleJson, ScheduleResponse.class);
     }
 

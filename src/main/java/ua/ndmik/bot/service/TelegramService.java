@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.Message;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static ua.ndmik.bot.model.MenuCallback.GROUP_SELECTION;
@@ -91,28 +93,19 @@ public class TelegramService {
     }
 
     public void sendTodayStats(long chatId) {
-        if (!isAdminChat(chatId)) {
-            sendText(chatId, "⛔️ Команда доступна тільки адміну.");
-            return;
-        }
-        sendText(chatId, statsService.buildTodayStatsMessage());
+        sendAdminStats(chatId, statsService::buildTodayStatsMessage);
     }
 
     public void sendWeeklyStats(long chatId) {
+        sendAdminStats(chatId, statsService::buildWeeklyStatsMessage);
+    }
+
+    private void sendAdminStats(long chatId, Supplier<String> statsProvider) {
         if (!isAdminChat(chatId)) {
             sendText(chatId, "⛔️ Команда доступна тільки адміну.");
             return;
         }
-        sendText(chatId, statsService.buildWeeklyStatsMessage());
-    }
-
-    public void sendDailySummaryToAdmins() {
-        if (adminChatIds.isEmpty()) {
-            log.debug("No admin chat IDs configured, skipping daily summary.");
-            return;
-        }
-        String summary = statsService.buildTodayStatsMessage();
-        adminChatIds.forEach(chatId -> sendText(chatId, summary));
+        sendText(chatId, statsProvider.get());
     }
 
     private void sendText(long chatId, String text) {
@@ -183,7 +176,7 @@ public class TelegramService {
         String groupId = user.getGroupId();
         String displayGroupId = formatGroupInfo(groupId);
         String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
-        List<Schedule> schedules = scheduleRepository.findAllByGroupId(groupId);
+        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, user.getArea());
         String shutdowns = dtekService.getShutdownsMessage(schedules);
         return String.format(template, header, displayGroupId, notificationStatus, shutdowns);
     }

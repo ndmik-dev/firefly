@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ua.ndmik.bot.model.DtekArea;
 
 import java.io.Serializable;
 
@@ -15,6 +16,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class ScheduleId implements Serializable {
 
+    private DtekArea area;
     private String groupId;
     private ScheduleDay scheduleDay;
 }

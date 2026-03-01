@@ -2,16 +2,19 @@ CREATE TABLE IF NOT EXISTS user_settings (
     chat_id INTEGER PRIMARY KEY,
     group_id TEXT,
     tmp_group_id TEXT,
+    area TEXT,
+    tmp_area TEXT,
     is_notification_enabled INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS schedules (
+    area TEXT NOT NULL,
     group_id TEXT NOT NULL,
     schedule_day TEXT NOT NULL,
     schedule TEXT,
     last_update TEXT,
     need_to_notify INTEGER,
-    PRIMARY KEY (group_id, schedule_day)
+    PRIMARY KEY (area, group_id, schedule_day)
 );
 
 CREATE TABLE IF NOT EXISTS daily_stats (

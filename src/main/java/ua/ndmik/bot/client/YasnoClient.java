@@ -1,11 +1,12 @@
 package ua.ndmik.bot.client;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import ua.ndmik.bot.model.AddressItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,6 @@ import java.util.List;
 @Slf4j
 public class YasnoClient {
 
-    private static final String BASE_URL = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2";
     private static final String STREETS_PATH = "/streets";
     private static final String HOUSES_PATH = "/houses";
     private static final String GROUP_PATH = "/group";
@@ -22,11 +22,8 @@ public class YasnoClient {
     private final RestClient restClient;
     private final JsonMapper mapper;
 
-    public YasnoClient() {
-        this.restClient = RestClient.builder()
-                .baseUrl(BASE_URL)
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    public YasnoClient(@Qualifier("yasnoRestClient") RestClient restClient) {
+        this.restClient = restClient;
         this.mapper = new JsonMapper();
     }
 
@@ -78,7 +75,9 @@ public class YasnoClient {
         }
 
         JsonNode root = mapper.readTree(json);
-        JsonNode itemsNode = root.isArray() ? root : root.path("data");
+        JsonNode itemsNode = root.isArray()
+                ? root
+                : root.path("data");
         if (!itemsNode.isArray()) {
             log.debug("Unexpected YASNO address payload: {}", json);
             return result;
@@ -88,7 +87,9 @@ public class YasnoClient {
             long id = item.path("id").asLong();
             String name = item.path("name").asString();
             String fullName = item.path("fullName").asString();
-            String displayName = !fullName.isBlank() ? fullName : name;
+            String displayName = !fullName.isBlank()
+                    ? fullName
+                    : name;
             if (id > 0) {
                 result.add(new AddressItem(id, displayName));
             }
@@ -118,7 +119,11 @@ public class YasnoClient {
 
     private JsonNode firstPresent(JsonNode... candidates) {
         for (JsonNode candidate : candidates) {
-            if (candidate != null && !candidate.isMissingNode() && !candidate.isNull() && !text(candidate).isBlank()) {
+            boolean isDataPresent = candidate != null
+                    && !candidate.isMissingNode()
+                    && !candidate.isNull()
+                    && !text(candidate).isBlank();
+            if (isDataPresent) {
                 return candidate;
             }
         }
@@ -130,8 +135,5 @@ public class YasnoClient {
             return "";
         }
         return node.asString();
-    }
-
-    public record AddressItem(long id, String name) {
     }
 }

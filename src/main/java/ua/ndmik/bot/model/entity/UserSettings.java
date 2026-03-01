@@ -2,6 +2,7 @@ package ua.ndmik.bot.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ua.ndmik.bot.model.DtekArea;
 
 @Entity
 @Table(name = "user_settings")
@@ -18,6 +19,12 @@ public class UserSettings {
     private String groupId;
 
     private String tmpGroupId;
+
+    @Enumerated(EnumType.STRING)
+    private DtekArea area;
+
+    @Enumerated(EnumType.STRING)
+    private DtekArea tmpArea;
 
     private boolean isNotificationEnabled;
 }
