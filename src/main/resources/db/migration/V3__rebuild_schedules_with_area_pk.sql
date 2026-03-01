@@ -1,10 +1,4 @@
-ALTER TABLE schedules ADD COLUMN IF NOT EXISTS area TEXT;
-
-UPDATE schedules
-SET area = 'KYIV_REGION'
-WHERE area IS NULL OR area = '';
-
-CREATE TABLE IF NOT EXISTS schedules_new (
+CREATE TABLE schedules_new (
     area TEXT NOT NULL,
     group_id TEXT NOT NULL,
     schedule_day TEXT NOT NULL,
@@ -15,7 +9,13 @@ CREATE TABLE IF NOT EXISTS schedules_new (
 );
 
 INSERT OR REPLACE INTO schedules_new(area, group_id, schedule_day, schedule, last_update, need_to_notify)
-SELECT area, group_id, schedule_day, schedule, last_update, need_to_notify
+SELECT
+    'KYIV_REGION',
+    group_id,
+    schedule_day,
+    schedule,
+    last_update,
+    need_to_notify
 FROM schedules;
 
 DROP TABLE schedules;
