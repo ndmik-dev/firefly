@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import ua.ndmik.bot.converter.LocalDateTimeSqliteConverter;
 import ua.ndmik.bot.model.DtekArea;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class Schedule {
     private ScheduleDay scheduleDay;
     @JdbcTypeCode(SqlTypes.JSON)
     private String schedule;
+    @Convert(converter = LocalDateTimeSqliteConverter.class)
     private LocalDateTime lastUpdate;
     private Boolean needToNotify;
 }
