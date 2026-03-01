@@ -176,7 +176,7 @@ public class TelegramService {
         String groupId = user.getGroupId();
         String displayGroupId = formatGroupInfo(groupId);
         String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
-        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, user.getArea());
+        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, user.getArea().name());
         String shutdowns = dtekService.getShutdownsMessage(schedules);
         return String.format(template, header, displayGroupId, notificationStatus, shutdowns);
     }

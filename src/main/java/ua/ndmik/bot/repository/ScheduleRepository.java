@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleId;
 import ua.ndmik.bot.model.entity.ScheduleDay;
@@ -22,7 +21,7 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
             WHERE need_to_notify = 1
               AND area = :area
             """, nativeQuery = true)
-    List<String> findNotifyGroupIdsByArea(@Param("area") DtekArea area);
+    List<String> findNotifyGroupIdsByArea(@Param("area") String area);
 
     @Query(value = """
             SELECT *
@@ -37,7 +36,7 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
             WHERE group_id = :groupId
               AND area = :area
             """, nativeQuery = true)
-    List<Schedule> findByGroupAndArea(@Param("groupId") String groupId, @Param("area") DtekArea area);
+    List<Schedule> findByGroupAndArea(@Param("groupId") String groupId, @Param("area") String area);
 
     @Query(value = """
             SELECT *
@@ -59,5 +58,5 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
             FROM schedules
             WHERE area = :area
             """, nativeQuery = true)
-    List<String> findGroupIdsByArea(@Param("area") DtekArea area);
+    List<String> findGroupIdsByArea(@Param("area") String area);
 }

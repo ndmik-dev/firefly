@@ -78,7 +78,7 @@ public class ShutdownsScheduler {
         List<Schedule> newSchedules = converter.toSchedules(scheduleResponse, area);
         Set<String> tomorrowAppearedIds = getTomorrowAppearedIds(oldSchedules, newSchedules);
         compareAndUpdate(oldSchedules, newSchedules);
-        List<String> updatedGroupIds = scheduleRepository.findNotifyGroupIdsByArea(area);
+        List<String> updatedGroupIds = scheduleRepository.findNotifyGroupIdsByArea(area.name());
         if (updatedGroupIds.isEmpty()) {
             log.info("Nothing has changed for area={}, any updates.", area);
         }
@@ -161,7 +161,7 @@ public class ShutdownsScheduler {
     }
 
     private void processGroupUpdate(DtekArea area, String groupId, boolean tomorrowArrived) {
-        List<UserSettings> users = userRepository.findNotifiableByGroupAndArea(groupId, area);
+        List<UserSettings> users = userRepository.findNotifiableByGroupAndArea(groupId, area.name());
         if (tomorrowArrived) {
             log.info("Tomorrow schedule appeared for area={}, groupId={}. Sending updates", area, groupId);
             users.forEach(user -> telegramService.sendUpdate(user, TOMORROW_SCHEDULE_APPEARED_MESSAGE));
@@ -169,7 +169,7 @@ public class ShutdownsScheduler {
             log.info("Schedule changed for area={}, groupId={}. Sending updates", area, groupId);
             users.forEach(user -> telegramService.sendUpdate(user, SCHEDULE_CHANGED_MESSAGE));
         }
-        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, area);
+        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, area.name());
         schedules.forEach(schedule -> schedule.setNeedToNotify(Boolean.FALSE));
         scheduleRepository.saveAll(schedules);
     }

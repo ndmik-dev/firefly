@@ -61,7 +61,7 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
 
     private void editGroupSelection(Update update, String selectedGroupId, String text, DtekArea area, int page) {
         long chatId = getChatId(update);
-        List<String> groupIds = scheduleRepository.findGroupIdsByArea(area)
+        List<String> groupIds = scheduleRepository.findGroupIdsByArea(area.name())
                 .stream()
                 .sorted()
                 .toList();
@@ -85,12 +85,11 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
 
-        String pagedText = text + "\n\n📄 Сторінка " + (normalizedPage + 1) + "/" + totalPages;
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         Message message = new Message(
                 messageId,
                 chatId,
-                pagedText,
+                text,
                 menu
         );
         telegramService.editMessage(message);
