@@ -85,12 +85,11 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
         ));
         InlineKeyboardMarkup menu = telegramService.menu(rows);
 
-        String pagedText = text + "\n\n📄 Сторінка " + (normalizedPage + 1) + "/" + totalPages;
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         Message message = new Message(
                 messageId,
                 chatId,
-                pagedText,
+                text,
                 menu
         );
         telegramService.editMessage(message);
