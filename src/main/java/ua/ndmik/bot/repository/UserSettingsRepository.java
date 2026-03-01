@@ -3,7 +3,6 @@ package ua.ndmik.bot.repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-import ua.ndmik.bot.model.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 
 import java.util.List;
@@ -20,7 +19,7 @@ public interface UserSettingsRepository extends CrudRepository<UserSettings, Lon
               AND area = :area
               AND is_notification_enabled = 1
             """, nativeQuery = true)
-    List<UserSettings> findNotifiableByGroupAndArea(@Param("groupId") String groupId, @Param("area") DtekArea area);
+    List<UserSettings> findNotifiableByGroupAndArea(@Param("groupId") String groupId, @Param("area") String area);
 
     @Query(value = """
             SELECT COUNT(*)

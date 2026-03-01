@@ -61,7 +61,7 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
 
     private void editGroupSelection(Update update, String selectedGroupId, String text, DtekArea area, int page) {
         long chatId = getChatId(update);
-        List<String> groupIds = scheduleRepository.findGroupIdsByArea(area)
+        List<String> groupIds = scheduleRepository.findGroupIdsByArea(area.name())
                 .stream()
                 .sorted()
                 .toList();
