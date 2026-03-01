@@ -51,7 +51,7 @@ public class DtekShutdownsService {
     }
 
     private Map<LocalTime, LocalTime> getShutdowns(Schedule schedule) {
-        if (schedule == null) {
+        if (schedule == null || schedule.getSchedule() == null) {
             return Map.of();
         }
 
