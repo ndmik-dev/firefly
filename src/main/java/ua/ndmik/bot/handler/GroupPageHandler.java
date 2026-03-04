@@ -25,9 +25,16 @@ public class GroupPageHandler implements CallbackHandler {
         PagePayload payload = parsePayload(data);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        String selectedGroupId = user.getTmpGroupId() != null
+                ? user.getTmpGroupId()
+                : user.getGroupId();
+        DtekArea selectedArea = user.getTmpGroupId() != null
+                ? user.getTmpArea()
+                : user.getArea();
         regionHandler.reprint(
                 update,
-                user.getTmpGroupId() != null ? user.getTmpGroupId() : user.getGroupId(),
+                selectedGroupId,
+                selectedArea,
                 AbstractAreaGroupHandler.GROUP_SELECTION_TEXT,
                 payload.area(),
                 payload.page()
