@@ -163,22 +163,27 @@ public class TelegramService {
     public String formatMessage(UserSettings user, String header) {
         String template = """
                 %s
+                %s
+
                 ⚙️ <b>Ваші налаштування</b>
                 
+                🏙️ Регіон: <b>%s</b>
                 🧩 Група відключень: <b>%s</b>
                 🔔 Сповіщення: <b>%s</b>
-
-                %s
                 """;
         header = Strings.isNotBlank(header)
                 ? (header + "\n")
                 : "";
         String groupId = user.getGroupId();
+        DtekArea area = user.getArea();
+        String displayArea = formatAreaInfo(area);
         String displayGroupId = formatGroupInfo(groupId);
         String notificationStatus = formatNotificationInfo(user.isNotificationEnabled());
-        List<Schedule> schedules = scheduleRepository.findByGroupAndArea(groupId, user.getArea().name());
+        List<Schedule> schedules = (Strings.isBlank(groupId) || area == null)
+                ? List.of()
+                : scheduleRepository.findByGroupAndArea(groupId, area.name());
         String shutdowns = dtekService.getShutdownsMessage(schedules);
-        return String.format(template, header, displayGroupId, notificationStatus, shutdowns);
+        return String.format(template, header, shutdowns, displayArea, displayGroupId, notificationStatus);
     }
 
     private UserSettings getOrCreateUser(Update update) {
@@ -259,6 +264,16 @@ public class TelegramService {
         return Strings.isBlank(groupId)
                 ? "❗ Не обрано"
                 : groupId;
+    }
+
+    private String formatAreaInfo(DtekArea area) {
+        if (area == null) {
+            return "❗ Не обрано";
+        }
+        return switch (area) {
+            case KYIV -> "Київ";
+            case KYIV_REGION -> "Київщина";
+        };
     }
 
     private boolean isAdminChat(long chatId) {

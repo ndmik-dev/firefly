@@ -20,8 +20,7 @@ public class MessageFormatter {
     public String format(Map<LocalTime, LocalTime> todayShutdowns,
                          Map<LocalTime, LocalTime> tomorrowShutdowns,
                          LocalDate today) {
-        return  "💡 <b>Коли буде світло</b>\n\n" +
-                formatDay("Сьогодні", today, todayShutdowns) +
+        return  formatDay("Сьогодні", today, todayShutdowns) +
                 '\n' +
                 formatDay("Завтра", today.plusDays(1), tomorrowShutdowns);
     }
