@@ -79,7 +79,9 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
                 )
                 .toList();
         List<InlineKeyboardRow> rows = telegramService.chunkButtons(buttons, 2);
-        rows.add(buildPaginationRow(area, normalizedPage, totalPages));
+        if (totalPages > 1) {
+            rows.add(buildPaginationRow(area, normalizedPage, totalPages));
+        }
         rows.add(new InlineKeyboardRow(List.of(
                 telegramService.button("⬅️ Назад", GROUP_BACK.name()),
                 telegramService.button("✅ Підтвердити", GROUP_DONE.name()))
