@@ -40,27 +40,33 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
     @Override
     public void handle(Update update) {
         UserSettings user = requireUser(getChatId(update));
-        reprint(update, user.getGroupId(), GROUP_SELECTION_TEXT, targetArea(), 0);
+        reprint(update, user.getGroupId(), user.getArea(), GROUP_SELECTION_TEXT, targetArea(), 0);
     }
 
-    public void reprint(Update update, String userGroupId, String text) {
+    public void reprint(Update update, String selectedGroupId, DtekArea selectedArea, String text) {
         UserSettings user = requireUser(getChatId(update));
         DtekArea area = user.getTmpArea() != null
                 ? user.getTmpArea()
                 : (user.getArea() != null ? user.getArea() : DtekArea.KYIV_REGION);
-        reprint(update, userGroupId, text, area, 0);
+        reprint(update, selectedGroupId, selectedArea, text, area, 0);
     }
 
-    public void reprint(Update update, String userGroupId, String text, DtekArea area, int page) {
+    public void reprint(Update update, String selectedGroupId, DtekArea selectedArea, String text, DtekArea area, int page) {
         UserSettings user = requireUser(getChatId(update));
         if (user.getTmpArea() != area) {
             user.setTmpArea(area);
+            user.setTmpGroupId(null);
             userRepository.save(user);
         }
-        editGroupSelection(update, userGroupId, text, area, page);
+        editGroupSelection(update, selectedGroupId, selectedArea, text, area, page);
     }
 
-    private void editGroupSelection(Update update, String selectedGroupId, String text, DtekArea area, int page) {
+    private void editGroupSelection(Update update,
+                                    String selectedGroupId,
+                                    DtekArea selectedArea,
+                                    String text,
+                                    DtekArea area,
+                                    int page) {
         long chatId = getChatId(update);
         List<String> groupIds = scheduleRepository.findGroupIdsByArea(area.name())
                 .stream()
@@ -71,10 +77,9 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
         int fromIndex = normalizedPage * PAGE_SIZE;
         int toIndex = Math.min(fromIndex + PAGE_SIZE, groupIds.size());
         List<String> pageGroupIds = groupIds.subList(fromIndex, toIndex);
-
         List<InlineKeyboardButton> buttons = pageGroupIds.stream()
                 .map(groupId -> telegramService.button(
-                        formatButton(groupId, selectedGroupId),
+                        formatButton(groupId, selectedGroupId, selectedArea, area),
                         GROUP_CLICK.name() + ":" + groupId + ":" + area.name() + ":" + normalizedPage)
                 )
                 .toList();
@@ -113,10 +118,14 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
         ));
     }
 
-    private String formatButton(String groupId, String userGroupId) {
-        return groupId.equals(userGroupId)
+    private String formatButton(String groupId, String selectedGroupId, DtekArea selectedArea, DtekArea area) {
+        return isSelectedForArea(groupId, selectedGroupId, selectedArea, area)
                 ? "✅ " + groupId
                 : "⚪ " + groupId;
+    }
+
+    private boolean isSelectedForArea(String groupId, String selectedGroupId, DtekArea selectedArea, DtekArea area) {
+        return selectedArea == area && groupId.equals(selectedGroupId);
     }
 
     private UserSettings requireUser(long chatId) {

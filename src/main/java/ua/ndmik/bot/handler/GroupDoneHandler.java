@@ -31,7 +31,7 @@ public class GroupDoneHandler implements CallbackHandler {
         String groupId = user.getTmpGroupId();
         DtekArea area = user.getTmpArea();
         if (groupId == null) {
-            regionHandler.reprint(update, null, "⚠️ Щоб зберегти вибір, спочатку оберіть групу зі списку нижче.");
+            regionHandler.reprint(update, null, null, "⚠️ Щоб зберегти вибір, спочатку оберіть групу зі списку нижче.");
             return;
         }
         user.setGroupId(groupId);

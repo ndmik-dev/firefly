@@ -31,6 +31,7 @@ public class GroupClickHandler implements CallbackHandler {
         regionHandler.reprint(
                 update,
                 payload.groupId(),
+                payload.area(),
                 "✅ Групу обрано. Натисніть «✅ Підтвердити», щоб зберегти вибір.",
                 payload.area(),
                 payload.page()
