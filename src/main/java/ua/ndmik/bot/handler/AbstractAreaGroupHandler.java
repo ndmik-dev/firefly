@@ -10,6 +10,7 @@ import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
+import ua.ndmik.bot.util.GroupIdComparator;
 
 import java.util.List;
 
@@ -63,7 +64,7 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
         long chatId = getChatId(update);
         List<String> groupIds = scheduleRepository.findGroupIdsByArea(area.name())
                 .stream()
-                .sorted()
+                .sorted(GroupIdComparator.INSTANCE)
                 .toList();
         int totalPages = Math.max(1, (groupIds.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int normalizedPage = Math.max(0, Math.min(page, totalPages - 1));
