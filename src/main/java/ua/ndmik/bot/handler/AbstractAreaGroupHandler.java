@@ -124,7 +124,7 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
                 : "⚪ " + groupId;
     }
 
-    private boolean isSelectedForArea(String groupId, String selectedGroupId, DtekArea selectedArea, DtekArea area) {
+    static boolean isSelectedForArea(String groupId, String selectedGroupId, DtekArea selectedArea, DtekArea area) {
         return selectedArea == area && groupId.equals(selectedGroupId);
     }
 

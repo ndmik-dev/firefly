@@ -44,7 +44,7 @@ class MidnightRolloverSchedulerTests {
                 new HourOverride(11, HourState.NO)
         ));
 
-        given(scheduleRepository.findByDay(ScheduleDay.TOMORROW)).willReturn(List.of(tomorrow));
+        given(scheduleRepository.findByDay(ScheduleDay.TOMORROW.name())).willReturn(List.of(tomorrow));
 
         scheduler.rolloverSchedulesAtMidnight();
 
@@ -59,12 +59,12 @@ class MidnightRolloverSchedulerTests {
     void rolloverSchedulesAtMidnight_deletesDaysAndSavesNothingWhenTomorrowIsMissing() {
         MidnightRolloverScheduler scheduler = new MidnightRolloverScheduler(scheduleRepository);
 
-        given(scheduleRepository.findByDay(ScheduleDay.TOMORROW)).willReturn(List.of());
+        given(scheduleRepository.findByDay(ScheduleDay.TOMORROW.name())).willReturn(List.of());
 
         scheduler.rolloverSchedulesAtMidnight();
 
-        then(scheduleRepository).should().deleteByDay(ScheduleDay.TODAY);
-        then(scheduleRepository).should().deleteByDay(ScheduleDay.TOMORROW);
+        then(scheduleRepository).should().deleteByDay(ScheduleDay.TODAY.name());
+        then(scheduleRepository).should().deleteByDay(ScheduleDay.TOMORROW.name());
         assertThat(capturedSavedSchedules()).isEmpty();
     }
 

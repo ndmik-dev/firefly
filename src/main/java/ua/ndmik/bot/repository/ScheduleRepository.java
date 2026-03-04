@@ -7,7 +7,6 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleId;
-import ua.ndmik.bot.model.entity.ScheduleDay;
 
 import java.util.List;
 
@@ -43,7 +42,7 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
             FROM schedules
             WHERE schedule_day = :day
             """, nativeQuery = true)
-    List<Schedule> findByDay(@Param("day") ScheduleDay scheduleDay);
+    List<Schedule> findByDay(@Param("day") String scheduleDay);
 
     @Modifying
     @Query(value = """
@@ -51,7 +50,7 @@ public interface ScheduleRepository extends CrudRepository<Schedule, ScheduleId>
             FROM schedules
             WHERE schedule_day = :day
             """, nativeQuery = true)
-    void deleteByDay(@Param("day") ScheduleDay day);
+    void deleteByDay(@Param("day") String day);
 
     @Query(value = """
             SELECT DISTINCT group_id
