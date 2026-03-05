@@ -27,7 +27,7 @@ import static ua.ndmik.bot.util.ScheduleStateUtils.isAllDayWithPower;
 @Service
 @Slf4j
 public class ShutdownsScheduler {
-    private static final String TOMORROW_SCHEDULE_APPEARED_MESSAGE = "📅 Графік на завтра зʼявився";
+    private static final String TOMORROW_SCHEDULE_APPEARED_MESSAGE = "🔔 Графік на завтра зʼявився";
     private static final String SCHEDULE_CHANGED_MESSAGE = "🔄 Графік змінився";
 
     private final DtekClient dtekClient;

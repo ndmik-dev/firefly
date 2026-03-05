@@ -35,7 +35,10 @@ public class MidnightRolloverScheduler {
         log.info("Running daily schedule rollover");
         scheduleRepository.deleteByDay(TODAY.name());
         List<Schedule> tomorrowSchedules = scheduleRepository.findByDay(TOMORROW.name());
-        scheduleRepository.deleteByDay(TOMORROW.name());
+        if (tomorrowSchedules.isEmpty()) {
+            log.info("No tomorrow schedules found, rollover finished");
+            return;
+        }
         List<Schedule> rolledSchedules = tomorrowSchedules.stream()
                 .map(schedule -> Schedule.builder()
                         .area(schedule.getArea())
@@ -46,19 +49,14 @@ public class MidnightRolloverScheduler {
                         .needToNotify(Boolean.FALSE)
                         .build())
                 .toList();
-        List<Schedule> emptyTomorrowSchedules = tomorrowSchedules.stream()
-                .map(schedule -> Schedule.builder()
-                        .area(schedule.getArea())
-                        .groupId(schedule.getGroupId())
-                        .scheduleDay(TOMORROW)
-                        .schedule(buildAllYesScheduleJson())
-                        .lastUpdate(schedule.getLastUpdate())
-                        .needToNotify(Boolean.FALSE)
-                        .build())
-                .toList();
-        List<Schedule> schedulesToSave = new ArrayList<>(rolledSchedules.size() + emptyTomorrowSchedules.size());
+        String allYesScheduleJson = buildAllYesScheduleJson();
+        tomorrowSchedules.forEach(schedule -> {
+            schedule.setSchedule(allYesScheduleJson);
+            schedule.setNeedToNotify(Boolean.FALSE);
+        });
+        List<Schedule> schedulesToSave = new ArrayList<>(rolledSchedules.size() + tomorrowSchedules.size());
         schedulesToSave.addAll(rolledSchedules);
-        schedulesToSave.addAll(emptyTomorrowSchedules);
+        schedulesToSave.addAll(tomorrowSchedules);
         scheduleRepository.saveAll(schedulesToSave);
         log.info("Schedules were rolled over");
     }

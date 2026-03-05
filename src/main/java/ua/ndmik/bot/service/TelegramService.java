@@ -164,7 +164,6 @@ public class TelegramService {
         String template = """
                 %s
                 %s
-
                 ⚙️ <b>Ваші налаштування</b>
                 
                 🏙️ Регіон: <b>%s</b>

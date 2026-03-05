@@ -43,20 +43,21 @@ class MidnightRolloverSchedulerTests {
                 new HourOverride(10, HourState.NO),
                 new HourOverride(11, HourState.NO)
         ));
+        String tomorrowScheduleJson = tomorrow.getSchedule();
 
         given(scheduleRepository.findByDay(ScheduleDay.TOMORROW.name())).willReturn(List.of(tomorrow));
 
         scheduler.rolloverSchedulesAtMidnight();
 
         List<Schedule> savedSchedules = capturedSavedSchedules();
-        assertThat(find(savedSchedules, ScheduleDay.TODAY, "2.1").getSchedule()).isEqualTo(tomorrow.getSchedule());
+        assertThat(find(savedSchedules, ScheduleDay.TODAY, "2.1").getSchedule()).isEqualTo(tomorrowScheduleJson);
         assertThat(find(savedSchedules, ScheduleDay.TOMORROW, "2.1").getSchedule()).isEqualTo(allDayWithPowerJson());
         assertThat(find(savedSchedules, ScheduleDay.TODAY, "2.1").getNeedToNotify()).isFalse();
         assertThat(find(savedSchedules, ScheduleDay.TOMORROW, "2.1").getNeedToNotify()).isFalse();
     }
 
     @Test
-    void rolloverSchedulesAtMidnight_deletesDaysAndSavesNothingWhenTomorrowIsMissing() {
+    void rolloverSchedulesAtMidnight_deletesTodayAndSavesNothingWhenTomorrowIsMissing() {
         MidnightRolloverScheduler scheduler = new MidnightRolloverScheduler(scheduleRepository);
 
         given(scheduleRepository.findByDay(ScheduleDay.TOMORROW.name())).willReturn(List.of());
@@ -64,8 +65,8 @@ class MidnightRolloverSchedulerTests {
         scheduler.rolloverSchedulesAtMidnight();
 
         then(scheduleRepository).should().deleteByDay(ScheduleDay.TODAY.name());
-        then(scheduleRepository).should().deleteByDay(ScheduleDay.TOMORROW.name());
-        assertThat(capturedSavedSchedules()).isEmpty();
+        then(scheduleRepository).should().findByDay(ScheduleDay.TOMORROW.name());
+        then(scheduleRepository).shouldHaveNoMoreInteractions();
     }
 
     private List<Schedule> capturedSavedSchedules() {
