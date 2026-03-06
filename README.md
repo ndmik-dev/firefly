@@ -1,35 +1,56 @@
 # Firefly
 
-Telegram bot built with Spring Boot that fetches DTEK outage schedules and sends updates to users.
+Telegram bot (Spring Boot) that fetches DTEK outage schedules for Kyiv and Kyiv region, stores user settings in SQLite, and sends schedule updates.
 
 ## Stack
 - Java 25
-- Spring Boot 4
-- SQLite + Spring Data JPA
+- Spring Boot 4.0.1
+- SQLite + Spring Data JPA + Flyway
 - Telegram Bots API (long polling)
 - Playwright + Jsoup for DTEK data extraction
 
-## Features
-- `/start` flow with interactive inline menu
-- Admin stats commands: `/stats_today`, `/stats_week`
-- Region/group selection and persistence per chat
-- Notification toggle per user
-- Scheduled refresh of outage schedules
-- Daily rollover of `tomorrow` schedules into `today`
+## Bot Features
+- `/start` with inline menu and per-user settings persistence.
+- Manual group selection by region:
+  - `🏙️ Київ`
+  - `🏘️ Київщина`
+- Group auto-detection by address via YASNO:
+  - trigger: `📍 Знайти групу за адресою (Київ)`
+  - supported formats: `вул. Хрещатик, 22` or `вул. Хрещатик 22`
+  - current scope: **only city Kyiv addresses**
+  - resolved group is saved for the user with `area=KYIV`
+- Notification toggle per user.
+- Admin stats commands:
+  - `/stats_today`
+  - `/stats_week`
+- Scheduler:
+  - periodic refresh for Kyiv and Kyiv region schedules
+  - blocked window: `23:55-00:05` (`Europe/Kyiv`)
+  - midnight rollover: moves `tomorrow` schedules into `today`
 
 ## Configuration
-Spring also loads `.env` automatically (`spring.config.import: optional:file:.env[.properties]`).
+Spring loads `.env` automatically via:
+`spring.config.import: optional:file:.env[.properties]`
 
 Required:
-- `TELEGRAM_BOT_TOKEN` - Telegram bot token
+- `TELEGRAM_BOT_TOKEN`: Telegram bot token
 
 Optional:
-- `SPRING_DATASOURCE_URL` - overrides DB URL (default: `jdbc:sqlite:src/main/resources/db/app.db`)
-- `scheduler.shutdowns.fixed-delay-ms` - schedule polling interval in minutes (default: `10`)
-- `TELEGRAM_ADMIN_CHAT_IDS` - comma-separated admin chat IDs allowed to use `/stats_*` commands
+- `TELEGRAM_ADMIN_CHAT_IDS`: comma-separated chat IDs allowed to run `/stats_*`
+- `SPRING_DATASOURCE_URL`: datasource URL  
+  default: `jdbc:sqlite:src/main/resources/db/app.db`
+- `scheduler.shutdowns.fixed-delay-ms`: polling interval value for refresh scheduler  
+  note: despite the name, value is interpreted in **minutes** (`@Scheduled(..., timeUnit = TimeUnit.MINUTES)`)  
+  default: `10`
+- `scheduler.shutdowns.time-zone`: scheduler timezone  
+  default: `Europe/Kyiv`
+
+Database notes:
+- Flyway migrations are enabled.
+- JPA `ddl-auto` is `none`.
 
 ## Run Locally
-1. Set token in `.env` or export it:
+1. Set env vars (example):
 
 ```bash
 export TELEGRAM_BOT_TOKEN=your_token_here
@@ -41,13 +62,13 @@ export TELEGRAM_BOT_TOKEN=your_token_here
 ./gradlew playwrightInstallChromium
 ```
 
-3. Start the app:
+3. Start app:
 
 ```bash
 ./gradlew bootRun
 ```
 
-The app starts on port `8080`.
+App listens on `8080`.
 
 ## Build and Test
 ```bash
@@ -60,45 +81,31 @@ The app starts on port `8080`.
 Script: `scripts/yasno_group_by_address.sh`
 
 Purpose:
-- Resolve Kyiv outage group by address via YASNO API in 3 steps:
-  1. `street` lookup
-  2. `house` lookup
-  3. `group` lookup
+- Resolve outage group by address via YASNO API (`street -> house -> group`).
+- Works with default `region_id=25`, `dso_id=902`.
 
 Prerequisites:
-- `httpie` (`http` command)
+- `httpie` (`http`)
 - `jq`
 
 Usage:
 ```bash
 ./scripts/yasno_group_by_address.sh 'вул. Богдана Хмельницького, 11'
-```
-
-Also valid:
-```bash
 ./scripts/yasno_group_by_address.sh 'вул. Богдана Хмельницького 11'
-```
-
-Optional params:
-```bash
 ./scripts/yasno_group_by_address.sh '<address>' [region_id] [dso_id]
 ```
-- Default `region_id=25`
-- Default `dso_id=902`
 
 Output:
-- `stdout`: resolved group id (`group` or `group.subgroup`, for example `29.1`)
-- `stderr`: debug info with raw HTTP responses for `streets`, `houses`, and `group`, plus resolved `streetId`/`houseId`
+- `stdout`: resolved group id (for example `29.1`)
+- `stderr`: debug payloads (`streets`, `houses`, `group`) and resolved IDs
 
 ## Docker
 Build local image:
-
 ```bash
 docker build -t firefly:local .
 ```
 
 Run local container:
-
 ```bash
 mkdir -p ./db
 touch ./db/app.db
@@ -111,8 +118,10 @@ docker run --rm \
   firefly:local
 ```
 
-Note: `docker-compose.yml` is currently deployment-oriented and references `ghcr.io/ndmik-dev/firefly:latest` with host volume `/opt/firefly/db:/app/db`.
+`docker-compose.yml` is deployment-oriented and uses:
+- image `ghcr.io/ndmik-dev/firefly:latest`
+- DB mount `/opt/firefly/db:/app/db`
 
 ## CI/CD
-- `.github/workflows/build.yml`: build on pushes to `main` (currently marked as temporary in the file comment).
-- `.github/workflows/deploy.yml`: on pushes to `dev`, builds `bootJar`, builds and pushes `ghcr.io/${{ github.repository }}:latest`, then triggers Dokploy deployment.
+- `.github/workflows/build.yml`: runs `./gradlew build` on `push` and `pull_request`.
+- `.github/workflows/deploy.yml`: on merged PR into `main`, builds `bootJar`, pushes GHCR image, then triggers Dokploy deployment.
