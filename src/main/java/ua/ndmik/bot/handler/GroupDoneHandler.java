@@ -36,6 +36,7 @@ public class GroupDoneHandler implements CallbackHandler {
         }
         user.setGroupId(groupId);
         user.setArea(area);
+        user.setAwaitingAddressInput(false);
         userRepository.save(user);
 
         int messageId = update.getCallbackQuery().getMessage().getMessageId();

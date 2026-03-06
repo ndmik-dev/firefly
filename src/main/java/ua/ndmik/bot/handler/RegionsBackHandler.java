@@ -26,6 +26,10 @@ public class RegionsBackHandler implements CallbackHandler {
         long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+        if (user.isAwaitingAddressInput()) {
+            user.setAwaitingAddressInput(false);
+            userRepository.save(user);
+        }
         String groupId = user.getGroupId();
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         Message message;

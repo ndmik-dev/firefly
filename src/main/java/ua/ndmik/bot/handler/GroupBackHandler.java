@@ -23,6 +23,7 @@ public class GroupBackHandler implements CallbackHandler {
         UserSettings user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         user.setTmpGroupId(null);
+        user.setAwaitingAddressInput(false);
         userRepository.save(user);
         groupSelectionHandler.handle(update);
     }

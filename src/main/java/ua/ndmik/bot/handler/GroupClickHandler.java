@@ -27,6 +27,7 @@ public class GroupClickHandler implements CallbackHandler {
                 .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
         user.setTmpGroupId(payload.groupId());
         user.setTmpArea(payload.area());
+        user.setAwaitingAddressInput(false);
         userRepository.save(user);
         regionHandler.reprint(
                 update,

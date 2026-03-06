@@ -26,5 +26,7 @@ public class UserSettings {
     @Enumerated(EnumType.STRING)
     private DtekArea tmpArea;
 
+    private boolean awaitingAddressInput;
+
     private boolean isNotificationEnabled;
 }

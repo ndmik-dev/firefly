@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import ua.ndmik.bot.client.YasnoClient;
 import ua.ndmik.bot.model.AddressItem;
 import ua.ndmik.bot.model.ResolvedYasnoGroup;
+import ua.ndmik.bot.util.AddressQueryParser;
 
 import java.util.List;
 import java.util.Locale;
@@ -19,6 +20,12 @@ public class YasnoGroupResolverService {
 
     public YasnoGroupResolverService(YasnoClient yasnoClient) {
         this.yasnoClient = yasnoClient;
+    }
+
+    public Optional<ResolvedYasnoGroup> resolveByAddress(String addressQuery) {
+        // Current YASNO integration is limited to Kyiv city addresses.
+        return AddressQueryParser.parse(addressQuery)
+                .flatMap(address -> resolve(address.streetQuery(), address.houseQuery()));
     }
 
     public Optional<ResolvedYasnoGroup> resolve(String streetQuery, String houseQuery) {
