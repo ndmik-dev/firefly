@@ -2,8 +2,8 @@ package ua.ndmik.bot.service;
 
 import org.springframework.stereotype.Service;
 import ua.ndmik.bot.client.YasnoClient;
-import ua.ndmik.bot.model.AddressItem;
-import ua.ndmik.bot.model.ResolvedYasnoGroup;
+import ua.ndmik.bot.model.yasno.AddressItem;
+import ua.ndmik.bot.model.yasno.ResolvedYasnoGroup;
 import ua.ndmik.bot.util.AddressQueryParser;
 
 import java.util.List;

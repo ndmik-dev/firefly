@@ -4,14 +4,14 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.model.telegram.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
 
 import java.util.List;
 
-import static ua.ndmik.bot.model.MenuCallback.GROUP_SELECTION;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_SELECTION;
 
 @Component
 public class GroupResolvingHandler implements CallbackHandler {

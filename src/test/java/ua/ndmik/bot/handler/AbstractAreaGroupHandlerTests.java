@@ -1,7 +1,7 @@
 package ua.ndmik.bot.handler;
 
 import org.junit.jupiter.api.Test;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.common.DtekArea;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

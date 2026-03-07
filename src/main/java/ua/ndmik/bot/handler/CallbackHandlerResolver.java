@@ -1,7 +1,7 @@
 package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Service;
-import ua.ndmik.bot.model.MenuCallback;
+import ua.ndmik.bot.model.callback.MenuCallback;
 
 import java.util.HashMap;
 import java.util.Map;

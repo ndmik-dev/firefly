@@ -1,4 +1,4 @@
-package ua.ndmik.bot.model;
+package ua.ndmik.bot.model.common;
 
 import static ua.ndmik.bot.util.Constants.*;
 

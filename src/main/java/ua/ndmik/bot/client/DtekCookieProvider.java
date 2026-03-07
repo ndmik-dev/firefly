@@ -12,7 +12,7 @@ import com.microsoft.playwright.options.WaitUntilState;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.common.DtekArea;
 
 import java.time.Duration;
 import java.time.Instant;

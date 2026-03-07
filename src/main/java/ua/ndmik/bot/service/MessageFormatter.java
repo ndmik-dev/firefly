@@ -1,7 +1,7 @@
 package ua.ndmik.bot.service;
 
 import org.springframework.stereotype.Service;
-import ua.ndmik.bot.model.LightInterval;
+import ua.ndmik.bot.model.schedule.LightInterval;
 
 import java.time.LocalTime;
 import java.time.LocalDate;

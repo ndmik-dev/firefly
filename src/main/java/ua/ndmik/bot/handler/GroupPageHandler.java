@@ -2,7 +2,8 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.callback.PagePayload;
+import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
@@ -78,8 +79,5 @@ public class GroupPageHandler implements CallbackHandler {
         } catch (NumberFormatException ignored) {
             return 0;
         }
-    }
-
-    private record PagePayload(DtekArea area, int page) {
     }
 }

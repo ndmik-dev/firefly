@@ -5,7 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.HourState;
+import ua.ndmik.bot.model.schedule.HourState;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.repository.ScheduleRepository;
 

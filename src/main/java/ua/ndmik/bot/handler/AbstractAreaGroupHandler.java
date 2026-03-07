@@ -4,8 +4,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-import ua.ndmik.bot.model.DtekArea;
-import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.model.common.DtekArea;
+import ua.ndmik.bot.model.telegram.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
@@ -14,10 +14,10 @@ import ua.ndmik.bot.util.GroupIdComparator;
 
 import java.util.List;
 
-import static ua.ndmik.bot.model.MenuCallback.GROUP_BACK;
-import static ua.ndmik.bot.model.MenuCallback.GROUP_CLICK;
-import static ua.ndmik.bot.model.MenuCallback.GROUP_DONE;
-import static ua.ndmik.bot.model.MenuCallback.GROUP_PAGE;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_BACK;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_CLICK;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_DONE;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_PAGE;
 
 public abstract class AbstractAreaGroupHandler implements CallbackHandler {
     private static final int PAGE_SIZE = 12;

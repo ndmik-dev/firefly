@@ -2,7 +2,7 @@ package ua.ndmik.bot.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.common.DtekArea;
 
 @Entity
 @Table(name = "user_settings")
