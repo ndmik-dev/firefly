@@ -2,6 +2,7 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ua.ndmik.bot.exception.UserNotFoundException;
 import ua.ndmik.bot.model.callback.PagePayload;
 import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -24,7 +25,7 @@ public class GroupPageHandler implements CallbackHandler {
         long chatId = getChatId(update);
         String data = update.getCallbackQuery().getData();
         UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
         DtekArea fallbackArea = user.getTmpArea() != null
                 ? user.getTmpArea()
                 : (user.getArea() != null ? user.getArea() : DtekArea.KYIV_REGION);

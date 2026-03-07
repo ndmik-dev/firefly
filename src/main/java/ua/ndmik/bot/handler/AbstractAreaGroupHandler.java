@@ -4,6 +4,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import ua.ndmik.bot.exception.UserNotFoundException;
 import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.telegram.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
@@ -130,6 +131,6 @@ public abstract class AbstractAreaGroupHandler implements CallbackHandler {
 
     private UserSettings requireUser(long chatId) {
         return userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
     }
 }

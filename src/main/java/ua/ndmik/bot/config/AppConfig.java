@@ -3,10 +3,11 @@ package ua.ndmik.bot.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.client.RestClient;
-
-import static ua.ndmik.bot.util.Constants.DTEK_KREM_URL;
+import ua.ndmik.bot.exception.ApplicationExceptionReporter;
 
 @Configuration
 @EnableScheduling
@@ -39,5 +40,15 @@ public class AppConfig {
                 .baseUrl(YASNO_BASE_URL)
                 .defaultHeader(HttpHeaders.ACCEPT, "application/json")
                 .build();
+    }
+
+    @Bean
+    public TaskScheduler taskScheduler(ApplicationExceptionReporter exceptionReporter) {
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(2);
+        taskScheduler.setThreadNamePrefix("firefly-scheduler-");
+        taskScheduler.setErrorHandler(throwable -> exceptionReporter.report("scheduled task execution", throwable));
+        taskScheduler.initialize();
+        return taskScheduler;
     }
 }

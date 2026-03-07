@@ -7,6 +7,7 @@ import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsume
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ua.ndmik.bot.exception.ApplicationExceptionReporter;
 import ua.ndmik.bot.handler.CallbackHandlerResolver;
 import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.callback.MenuCallback;
@@ -26,17 +27,20 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
 
     private final String botToken;
     private final TelegramService telegramService;
+    private final ApplicationExceptionReporter exceptionReporter;
     private final CallbackHandlerResolver callbackHandlerResolver;
     private final UserSettingsRepository userRepository;
     private final YasnoGroupResolverService yasnoGroupResolverService;
 
     public DtekShutdownBot(@Value("${telegram.bot-token}") String botToken,
                            TelegramService telegramService,
+                           ApplicationExceptionReporter exceptionReporter,
                            CallbackHandlerResolver callbackHandlerResolver,
                            UserSettingsRepository userRepository,
                            YasnoGroupResolverService yasnoGroupResolverService) {
         this.botToken = botToken;
         this.telegramService = telegramService;
+        this.exceptionReporter = exceptionReporter;
         this.callbackHandlerResolver = callbackHandlerResolver;
         this.userRepository = userRepository;
         this.yasnoGroupResolverService = yasnoGroupResolverService;
@@ -54,13 +58,17 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            handleMessage(update);
-            return;
-        }
+        try {
+            if (update.hasMessage() && update.getMessage().hasText()) {
+                handleMessage(update);
+                return;
+            }
 
-        if (update.hasCallbackQuery()) {
-            handleCallback(update);
+            if (update.hasCallbackQuery()) {
+                handleCallback(update);
+            }
+        } catch (RuntimeException ex) {
+            exceptionReporter.report("telegram update processing", ex);
         }
     }
 

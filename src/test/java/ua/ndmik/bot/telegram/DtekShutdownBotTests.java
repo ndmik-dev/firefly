@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import ua.ndmik.bot.exception.ApplicationExceptionReporter;
 import ua.ndmik.bot.handler.CallbackHandler;
 import ua.ndmik.bot.handler.CallbackHandlerResolver;
 import ua.ndmik.bot.model.common.DtekArea;
@@ -20,20 +21,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 class DtekShutdownBotTests {
 
     private final TelegramService telegramService = mock(TelegramService.class);
+    private final ApplicationExceptionReporter exceptionReporter = mock(ApplicationExceptionReporter.class);
     private final CallbackHandlerResolver callbackHandlerResolver = mock(CallbackHandlerResolver.class);
     private final UserSettingsRepository userRepository = mock(UserSettingsRepository.class);
     private final YasnoGroupResolverService yasnoGroupResolverService = mock(YasnoGroupResolverService.class);
     private final DtekShutdownBot bot = new DtekShutdownBot(
             "TEST_TOKEN",
             telegramService,
+            exceptionReporter,
             callbackHandlerResolver,
             userRepository,
             yasnoGroupResolverService
@@ -93,6 +98,19 @@ class DtekShutdownBotTests {
 
         then(groupPageHandler).should().handle(update);
         then(telegramService).should().answerCallback("cbq-1");
+    }
+
+    @Test
+    void consume_reportsUnhandledExceptionFromCallbackHandler() {
+        Update update = callbackUpdate(888L, "cbq-2", "GROUP_PAGE:KYIV:0");
+        CallbackHandler callbackHandler = mock(CallbackHandler.class);
+        given(callbackHandlerResolver.getHandler(MenuCallback.GROUP_PAGE)).willReturn(callbackHandler);
+        doThrow(new RuntimeException("boom")).when(callbackHandler).handle(update);
+
+        bot.consume(update);
+
+        then(exceptionReporter).should().report(eq("telegram update processing"), any(RuntimeException.class));
+        then(telegramService).should().answerCallback("cbq-2");
     }
 
     private Update messageUpdate(long chatId, String text) {
