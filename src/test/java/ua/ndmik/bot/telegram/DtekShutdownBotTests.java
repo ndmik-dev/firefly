@@ -2,9 +2,12 @@ package ua.ndmik.bot.telegram;
 
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import ua.ndmik.bot.handler.CallbackHandler;
 import ua.ndmik.bot.handler.CallbackHandlerResolver;
 import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.MenuCallback;
 import ua.ndmik.bot.model.ResolvedYasnoGroup;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
@@ -80,6 +83,18 @@ class DtekShutdownBotTests {
         then(telegramService).should(never()).sendUpdate(eq(user), anyString());
     }
 
+    @Test
+    void consume_routesLegacyPageFractionCallbackToGroupPageHandler() {
+        Update update = callbackUpdate(777L, "cbq-1", "1/5");
+        CallbackHandler groupPageHandler = mock(CallbackHandler.class);
+        given(callbackHandlerResolver.getHandler(MenuCallback.GROUP_PAGE)).willReturn(groupPageHandler);
+
+        bot.consume(update);
+
+        then(groupPageHandler).should().handle(update);
+        then(telegramService).should().answerCallback("cbq-1");
+    }
+
     private Update messageUpdate(long chatId, String text) {
         Update update = mock(Update.class);
         Message message = mock(Message.class);
@@ -89,6 +104,20 @@ class DtekShutdownBotTests {
         given(message.getText()).willReturn(text);
         given(message.getChatId()).willReturn(chatId);
         given(update.hasCallbackQuery()).willReturn(false);
+        return update;
+    }
+
+    private Update callbackUpdate(long chatId, String callbackId, String callbackData) {
+        Update update = mock(Update.class);
+        CallbackQuery callbackQuery = mock(CallbackQuery.class);
+        Message message = mock(Message.class);
+        given(update.hasMessage()).willReturn(false);
+        given(update.hasCallbackQuery()).willReturn(true);
+        given(update.getCallbackQuery()).willReturn(callbackQuery);
+        given(callbackQuery.getData()).willReturn(callbackData);
+        given(callbackQuery.getId()).willReturn(callbackId);
+        given(callbackQuery.getMessage()).willReturn(message);
+        given(message.getChatId()).willReturn(chatId);
         return update;
     }
 }

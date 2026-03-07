@@ -17,10 +17,12 @@ import ua.ndmik.bot.service.TelegramService;
 import ua.ndmik.bot.service.YasnoGroupResolverService;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @Profile("!test")
 public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
+    private static final Pattern LEGACY_PAGE_CALLBACK = Pattern.compile("^\\d+/\\d+$");
 
     private final String botToken;
     private final TelegramService telegramService;
@@ -83,16 +85,22 @@ public class DtekShutdownBot implements SpringLongPollingBot, LongPollingSingleT
     private void handleCallback(Update update) {
         try {
             String data = update.getCallbackQuery().getData();
-            String callbackKey = data.split(":", 2)[0];
-            MenuCallback callback;
-            try {
-                callback = MenuCallback.valueOf(callbackKey);
-            } catch (IllegalArgumentException e) {
-                callback = MenuCallback.DEFAULT;
-            }
+            MenuCallback callback = resolveCallback(data);
             callbackHandlerResolver.getHandler(callback).handle(update);
         } finally {
             telegramService.answerCallback(update.getCallbackQuery().getId());
+        }
+    }
+
+    private MenuCallback resolveCallback(String data) {
+        String callbackKey = data.split(":", 2)[0];
+        try {
+            return MenuCallback.valueOf(callbackKey);
+        } catch (IllegalArgumentException e) {
+            if (LEGACY_PAGE_CALLBACK.matcher(data).matches()) {
+                return MenuCallback.GROUP_PAGE;
+            }
+            return MenuCallback.DEFAULT;
         }
     }
 
