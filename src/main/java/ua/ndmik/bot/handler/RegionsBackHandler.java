@@ -2,7 +2,8 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.exception.UserNotFoundException;
+import ua.ndmik.bot.model.telegram.Message;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
@@ -25,7 +26,11 @@ public class RegionsBackHandler implements CallbackHandler {
     public void handle(Update update) {
         long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
+        if (user.isAwaitingAddressInput()) {
+            user.setAwaitingAddressInput(false);
+            userRepository.save(user);
+        }
         String groupId = user.getGroupId();
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         Message message;

@@ -1,7 +1,7 @@
 package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.repository.ScheduleRepository;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;

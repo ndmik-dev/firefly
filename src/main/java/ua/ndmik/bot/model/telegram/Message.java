@@ -1,4 +1,4 @@
-package ua.ndmik.bot.model;
+package ua.ndmik.bot.model.telegram;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 

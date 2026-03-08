@@ -5,7 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import ua.ndmik.bot.converter.LocalDateTimeSqliteConverter;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.model.common.DtekArea;
 
 import java.time.LocalDateTime;
 

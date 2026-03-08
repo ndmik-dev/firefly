@@ -2,7 +2,9 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.exception.UserNotFoundException;
+import ua.ndmik.bot.model.callback.SelectionPayload;
+import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
@@ -24,9 +26,10 @@ public class GroupClickHandler implements CallbackHandler {
         String data = update.getCallbackQuery().getData();
         SelectionPayload payload = parsePayload(data);
         UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
         user.setTmpGroupId(payload.groupId());
         user.setTmpArea(payload.area());
+        user.setAwaitingAddressInput(false);
         userRepository.save(user);
         regionHandler.reprint(
                 update,
@@ -59,8 +62,5 @@ public class GroupClickHandler implements CallbackHandler {
             }
         }
         return new SelectionPayload(groupId, area, Math.max(page, 0));
-    }
-
-    private record SelectionPayload(String groupId, DtekArea area, int page) {
     }
 }

@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import ua.ndmik.bot.model.DtekArea;
-import ua.ndmik.bot.model.ScheduleResponse;
+import ua.ndmik.bot.model.common.DtekArea;
+import ua.ndmik.bot.model.schedule.ScheduleResponse;
 
 import java.util.Locale;
 import java.util.Optional;

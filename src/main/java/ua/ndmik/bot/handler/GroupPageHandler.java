@@ -2,7 +2,9 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.exception.UserNotFoundException;
+import ua.ndmik.bot.model.callback.PagePayload;
+import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 
@@ -22,9 +24,12 @@ public class GroupPageHandler implements CallbackHandler {
     public void handle(Update update) {
         long chatId = getChatId(update);
         String data = update.getCallbackQuery().getData();
-        PagePayload payload = parsePayload(data);
         UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
+        DtekArea fallbackArea = user.getTmpArea() != null
+                ? user.getTmpArea()
+                : (user.getArea() != null ? user.getArea() : DtekArea.KYIV_REGION);
+        PagePayload payload = parsePayload(data, fallbackArea);
         String selectedGroupId = user.getTmpGroupId() != null
                 ? user.getTmpGroupId()
                 : user.getGroupId();
@@ -41,9 +46,13 @@ public class GroupPageHandler implements CallbackHandler {
         );
     }
 
-    private PagePayload parsePayload(String data) {
+    private PagePayload parsePayload(String data, DtekArea fallbackArea) {
+        if (data.matches("^\\d+/\\d+$")) {
+            return new PagePayload(fallbackArea, parseLegacyPageIndex(data));
+        }
+
         String[] parts = data.split(":");
-        DtekArea area = DtekArea.KYIV_REGION;
+        DtekArea area = fallbackArea;
         int page = 0;
 
         if (parts.length > 1) {
@@ -61,6 +70,15 @@ public class GroupPageHandler implements CallbackHandler {
         return new PagePayload(area, Math.max(page, 0));
     }
 
-    private record PagePayload(DtekArea area, int page) {
+    private int parseLegacyPageIndex(String data) {
+        String[] legacyParts = data.split("/");
+        if (legacyParts.length == 0) {
+            return 0;
+        }
+        try {
+            return Math.max(Integer.parseInt(legacyParts[0]) - 1, 0);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 }

@@ -3,7 +3,7 @@ package ua.ndmik.bot.util;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.ScheduleResponse;
+import ua.ndmik.bot.model.schedule.ScheduleResponse;
 
 public class ScheduleParser {
 

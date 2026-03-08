@@ -1,4 +1,4 @@
-package ua.ndmik.bot.model;
+package ua.ndmik.bot.model.schedule;
 
 import java.time.LocalTime;
 

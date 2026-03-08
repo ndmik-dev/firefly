@@ -2,8 +2,9 @@ package ua.ndmik.bot.handler;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.ndmik.bot.model.Message;
-import ua.ndmik.bot.model.DtekArea;
+import ua.ndmik.bot.exception.UserNotFoundException;
+import ua.ndmik.bot.model.telegram.Message;
+import ua.ndmik.bot.model.common.DtekArea;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.UserSettingsRepository;
 import ua.ndmik.bot.service.TelegramService;
@@ -27,7 +28,7 @@ public class GroupDoneHandler implements CallbackHandler {
     public void handle(Update update) {
         long chatId = getChatId(update);
         UserSettings user = userRepository.findByChatId(chatId)
-                .orElseThrow(() -> new RuntimeException(String.format("User not found for chatId=%s", chatId)));
+                .orElseThrow(() -> new UserNotFoundException(chatId));
         String groupId = user.getTmpGroupId();
         DtekArea area = user.getTmpArea();
         if (groupId == null) {
@@ -36,6 +37,7 @@ public class GroupDoneHandler implements CallbackHandler {
         }
         user.setGroupId(groupId);
         user.setArea(area);
+        user.setAwaitingAddressInput(false);
         userRepository.save(user);
 
         int messageId = update.getCallbackQuery().getMessage().getMessageId();

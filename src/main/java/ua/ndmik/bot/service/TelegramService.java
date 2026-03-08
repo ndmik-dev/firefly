@@ -15,8 +15,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
-import ua.ndmik.bot.model.DtekArea;
-import ua.ndmik.bot.model.Message;
+import ua.ndmik.bot.model.common.DtekArea;
+import ua.ndmik.bot.model.telegram.Message;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.UserSettings;
 import ua.ndmik.bot.repository.ScheduleRepository;
@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static ua.ndmik.bot.model.MenuCallback.GROUP_SELECTION;
-import static ua.ndmik.bot.model.MenuCallback.NOTIFICATION_CLICK;
+import static ua.ndmik.bot.model.callback.MenuCallback.GROUP_SELECTION;
+import static ua.ndmik.bot.model.callback.MenuCallback.NOTIFICATION_CLICK;
 
 @Service
 @Slf4j
@@ -67,6 +67,10 @@ public class TelegramService {
 
     public void sendGreeting(Update update) {
         UserSettings user = getOrCreateUser(update);
+        if (user.isAwaitingAddressInput()) {
+            user.setAwaitingAddressInput(false);
+            userRepository.save(user);
+        }
         InlineKeyboardMarkup menu = buildMainMenuMarkup(user);
         Message message = new Message(
                 null,
@@ -198,6 +202,7 @@ public class TelegramService {
         log.info("Creating new user with chatId={}", chatId);
         UserSettings user = userRepository.save(UserSettings.builder()
                 .chatId(chatId)
+                .awaitingAddressInput(false)
                 .isNotificationEnabled(true)
                 .build());
         statsService.recordNewUser();

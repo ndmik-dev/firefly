@@ -2,8 +2,8 @@ package ua.ndmik.bot.service;
 
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.DtekArea;
-import ua.ndmik.bot.model.HourState;
+import ua.ndmik.bot.model.common.DtekArea;
+import ua.ndmik.bot.model.schedule.HourState;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleDay;
 

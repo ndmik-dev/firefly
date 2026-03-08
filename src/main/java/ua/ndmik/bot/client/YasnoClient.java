@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.AddressItem;
+import ua.ndmik.bot.model.yasno.AddressItem;
 
 import java.util.ArrayList;
 import java.util.List;

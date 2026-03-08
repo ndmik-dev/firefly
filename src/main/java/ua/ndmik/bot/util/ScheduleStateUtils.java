@@ -1,6 +1,6 @@
 package ua.ndmik.bot.util;
 
-import ua.ndmik.bot.model.HourState;
+import ua.ndmik.bot.model.schedule.HourState;
 
 import java.util.Map;
 

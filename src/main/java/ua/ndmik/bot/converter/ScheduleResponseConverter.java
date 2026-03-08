@@ -2,9 +2,9 @@ package ua.ndmik.bot.converter;
 
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.DtekArea;
-import ua.ndmik.bot.model.GroupSchedule;
-import ua.ndmik.bot.model.ScheduleResponse;
+import ua.ndmik.bot.model.common.DtekArea;
+import ua.ndmik.bot.model.schedule.GroupSchedule;
+import ua.ndmik.bot.model.schedule.ScheduleResponse;
 import ua.ndmik.bot.model.entity.Schedule;
 import ua.ndmik.bot.model.entity.ScheduleDay;
 

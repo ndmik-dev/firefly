@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
-import ua.ndmik.bot.model.HourState;
-import ua.ndmik.bot.model.ShutdownInterval;
+import ua.ndmik.bot.model.schedule.HourState;
+import ua.ndmik.bot.model.schedule.ShutdownInterval;
 import ua.ndmik.bot.model.entity.Schedule;
 
 import java.time.LocalDate;

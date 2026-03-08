@@ -1,4 +1,4 @@
-package ua.ndmik.bot.model;
+package ua.ndmik.bot.model.schedule;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import lombok.Getter;
