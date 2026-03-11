@@ -102,13 +102,13 @@ public class DtekCookieProvider {
             page.waitForLoadState(LoadState.DOMCONTENTLOADED,
                     new Page.WaitForLoadStateOptions().setTimeout(DOM_CONTENT_LOADED_WAIT_MS));
         } catch (PlaywrightException e) {
-            log.debug("DOM content loaded was not reached quickly while retrieving cookies: {}", e.getMessage());
+            log.warn("DOM content loaded was not reached quickly while retrieving cookies: {}", e.getMessage());
         }
         try {
             page.waitForLoadState(LoadState.NETWORKIDLE,
                     new Page.WaitForLoadStateOptions().setTimeout(NETWORK_IDLE_WAIT_MS));
         } catch (PlaywrightException e) {
-            log.debug("Network idle was not reached quickly while retrieving cookies: {}", e.getMessage());
+            log.warn("Network idle was not reached quickly while retrieving cookies: {}", e.getMessage());
         }
     }
 
@@ -124,7 +124,7 @@ public class DtekCookieProvider {
             try {
                 browser.close();
             } catch (RuntimeException e) {
-                log.debug("Failed to close Playwright browser cleanly", e);
+                log.warn("Failed to close Playwright browser cleanly", e);
             } finally {
                 browser = null;
             }
@@ -133,7 +133,7 @@ public class DtekCookieProvider {
             try {
                 playwright.close();
             } catch (RuntimeException e) {
-                log.debug("Failed to close Playwright cleanly", e);
+                log.warn("Failed to close Playwright cleanly", e);
             } finally {
                 playwright = null;
             }
