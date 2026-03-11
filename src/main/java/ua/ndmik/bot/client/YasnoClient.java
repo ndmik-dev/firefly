@@ -89,23 +89,33 @@ public class YasnoClient {
         }
 
         try {
-            JsonNode root = mapper.readTree(json);
-            JsonNode itemsNode = root.isArray()
-                    ? root
-                    : root.path("data");
+            JsonNode root = readJsonRoot(json);
+            if (root == null) {
+                log.debug("Unexpected non-JSON YASNO address payload: {}", snippet(json));
+                return result;
+            }
+
+            JsonNode itemsNode = firstArray(
+                    root,
+                    root.path("data"),
+                    root.path("result"),
+                    root.path("items"),
+                    root.path("data").path("items")
+            );
             if (!itemsNode.isArray()) {
                 log.debug("Unexpected YASNO address payload: {}", json);
                 return result;
             }
 
             for (JsonNode item : itemsNode) {
-                long id = item.path("id").asLong();
-                String name = item.path("name").asString();
-                String fullName = item.path("fullName").asString();
-                String displayName = !fullName.isBlank()
-                        ? fullName
-                        : name;
-                if (id > 0) {
+                long id = firstLong(item.path("id"), item.path("streetId"), item.path("houseId"));
+                String displayName = firstText(
+                        item.path("fullName"),
+                        item.path("name"),
+                        item.path("value"),
+                        item.path("label")
+                );
+                if (id > 0 && !displayName.isBlank()) {
                     result.add(new AddressItem(id, displayName));
                 }
             }
@@ -122,7 +132,11 @@ public class YasnoClient {
         }
 
         try {
-            JsonNode root = mapper.readTree(json);
+            JsonNode root = readJsonRoot(json);
+            if (root == null) {
+                log.debug("Unexpected non-JSON YASNO group payload: {}", snippet(json));
+                return "";
+            }
             JsonNode candidate = firstPresent(
                     root.path("group"),
                     root.path("groupId"),
@@ -163,6 +177,99 @@ public class YasnoClient {
             }
         }
         return null;
+    }
+
+    private JsonNode firstArray(JsonNode... candidates) {
+        for (JsonNode candidate : candidates) {
+            if (candidate != null && candidate.isArray()) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private long firstLong(JsonNode... candidates) {
+        for (JsonNode candidate : candidates) {
+            if (candidate == null || candidate.isMissingNode() || candidate.isNull()) {
+                continue;
+            }
+            long value = candidate.asLong(0L);
+            if (value > 0L) {
+                return value;
+            }
+        }
+        return 0L;
+    }
+
+    private String firstText(JsonNode... candidates) {
+        for (JsonNode candidate : candidates) {
+            String value = text(candidate);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private JsonNode readJsonRoot(String payload) {
+        String normalized = normalizeJson(payload);
+        if (normalized.isBlank()) {
+            return null;
+        }
+        return mapper.readTree(normalized);
+    }
+
+    private String normalizeJson(String payload) {
+        if (payload == null) {
+            return "";
+        }
+        String trimmed = payload.stripLeading();
+        if (trimmed.isBlank()) {
+            return "";
+        }
+
+        char first = trimmed.charAt(0);
+        if (first == '{' || first == '[') {
+            return trimmed;
+        }
+        if (first == '<') {
+            return "";
+        }
+
+        int objectStart = trimmed.indexOf('{');
+        int arrayStart = trimmed.indexOf('[');
+        int startIndex = selectStartIndex(objectStart, arrayStart);
+        if (startIndex < 0) {
+            return "";
+        }
+
+        String prefix = trimmed.substring(0, startIndex).trim();
+        if (prefix.startsWith(")]}',") || prefix.startsWith("for(;;);")) {
+            return trimmed.substring(startIndex);
+        }
+        return "";
+    }
+
+    private int selectStartIndex(int objectStart, int arrayStart) {
+        if (objectStart < 0) {
+            return arrayStart;
+        }
+        if (arrayStart < 0) {
+            return objectStart;
+        }
+        return Math.min(objectStart, arrayStart);
+    }
+
+    private String snippet(String payload) {
+        if (payload == null) {
+            return "";
+        }
+        String normalized = payload.replaceAll("\\s+", " ").trim();
+        int maxLength = 240;
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength) + "...";
     }
 
     private String text(JsonNode node) {
