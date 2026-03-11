@@ -14,6 +14,7 @@ import ua.ndmik.bot.exception.ApplicationExceptionReporter;
 public class AppConfig {
 
     private static final String YASNO_BASE_URL = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2";
+    private static final String YASNO_REFERER_HEADER = "https://app.yasno.ua/";
 
     private static final String ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
     private static final String ACCEPT_LANGUAGE_HEADER = "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,uk;q=0.6";
@@ -39,6 +40,10 @@ public class AppConfig {
         return RestClient.builder()
                 .baseUrl(YASNO_BASE_URL)
                 .defaultHeader(HttpHeaders.ACCEPT, "application/json")
+                .defaultHeader(HttpHeaders.ACCEPT_LANGUAGE, ACCEPT_LANGUAGE_HEADER)
+                .defaultHeader(HttpHeaders.CACHE_CONTROL, CACHE_CONTROL_HEADER)
+                .defaultHeader(HttpHeaders.REFERER, YASNO_REFERER_HEADER)
+                .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT_HEADER)
                 .build();
     }
 
