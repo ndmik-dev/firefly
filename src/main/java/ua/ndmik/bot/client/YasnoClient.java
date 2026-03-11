@@ -91,7 +91,7 @@ public class YasnoClient {
         try {
             JsonNode root = readJsonRoot(json);
             if (root == null) {
-                log.debug("Unexpected non-JSON YASNO address payload: {}", snippet(json));
+                log.warn("Unexpected non-JSON YASNO address payload: {}", snippet(json));
                 return result;
             }
 
@@ -103,7 +103,7 @@ public class YasnoClient {
                     root.path("data").path("items")
             );
             if (!itemsNode.isArray()) {
-                log.debug("Unexpected YASNO address payload: {}", json);
+                log.warn("Unexpected YASNO address payload: {}", json);
                 return result;
             }
 
@@ -121,7 +121,7 @@ public class YasnoClient {
             }
         } catch (RuntimeException ex) {
             log.warn("Failed to parse YASNO address payload");
-            log.debug("YASNO address payload parse error: {}", json, ex);
+            log.warn("YASNO address payload parse error: {}", json, ex);
         }
         return result;
     }
@@ -134,7 +134,7 @@ public class YasnoClient {
         try {
             JsonNode root = readJsonRoot(json);
             if (root == null) {
-                log.debug("Unexpected non-JSON YASNO group payload: {}", snippet(json));
+                log.warn("Unexpected non-JSON YASNO group payload: {}", snippet(json));
                 return "";
             }
             JsonNode candidate = firstPresent(
@@ -145,13 +145,13 @@ public class YasnoClient {
             );
 
             if (candidate == null || candidate.isMissingNode() || candidate.isNull()) {
-                log.debug("Unexpected YASNO group payload: {}", json);
+                log.warn("Unexpected YASNO group payload: {}", json);
                 return "";
             }
             return text(candidate).trim();
         } catch (RuntimeException ex) {
             log.warn("Failed to parse YASNO group payload");
-            log.debug("YASNO group payload parse error: {}", json, ex);
+            log.warn("YASNO group payload parse error: {}", json, ex);
             return "";
         }
     }
@@ -161,7 +161,7 @@ public class YasnoClient {
             return Objects.toString(request.get(), "");
         } catch (RuntimeException ex) {
             log.warn("YASNO {} request failed ({})", operation, params);
-            log.debug("YASNO {} request error", operation, ex);
+            log.warn("YASNO {} request error", operation, ex);
             return "";
         }
     }
