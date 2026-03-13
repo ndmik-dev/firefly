@@ -43,12 +43,48 @@ class YasnoClientTests {
     }
 
     @Test
-    void findGroup_extractsNumericGroup() {
+    void findGroup_combinesGroupWithSubgroup() {
         YasnoClient client = clientWithResponse("{\"group\":20,\"subgroup\":1}");
 
         String group = client.findGroup(25, 902, 1064, 17211);
 
-        assertThat(group).isEqualTo("20");
+        assertThat(group).isEqualTo("20.1");
+    }
+
+    @Test
+    void findGroup_keepsGroupIdThatAlreadyContainsSubgroup() {
+        YasnoClient client = clientWithResponse("{\"groupId\":\"29.1\",\"subgroup\":1}");
+
+        String group = client.findGroup(25, 902, 1064, 17211);
+
+        assertThat(group).isEqualTo("29.1");
+    }
+
+    @Test
+    void findGroup_combinesGroupWithSubgroupFromDataNode() {
+        YasnoClient client = clientWithResponse("{\"data\":{\"group\":20,\"subgroup\":1}}");
+
+        String group = client.findGroup(25, 902, 1064, 17211);
+
+        assertThat(group).isEqualTo("20.1");
+    }
+
+    @Test
+    void findGroup_defaultsMissingSubgroupToOne() {
+        YasnoClient client = clientWithResponse("{\"group\":20}");
+
+        String group = client.findGroup(25, 902, 1064, 17211);
+
+        assertThat(group).isEqualTo("20.1");
+    }
+
+    @Test
+    void findGroup_defaultsMissingSubgroupToOneInDataNode() {
+        YasnoClient client = clientWithResponse("{\"data\":{\"group\":29}}");
+
+        String group = client.findGroup(25, 902, 1064, 17211);
+
+        assertThat(group).isEqualTo("29.1");
     }
 
     @SuppressWarnings("unchecked")

@@ -77,6 +77,12 @@ App listens on `8080`.
 ./gradlew build
 ```
 
+## Run Released JAR (`v1.0.0`)
+```bash
+export TELEGRAM_BOT_TOKEN=your_token_here
+java -jar build/libs/firefly-1.0.0.jar
+```
+
 ## YASNO Address Lookup Script
 Script: `scripts/yasno_group_by_address.sh`
 

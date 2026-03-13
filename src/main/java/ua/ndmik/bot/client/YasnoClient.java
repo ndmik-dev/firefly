@@ -20,6 +20,7 @@ public class YasnoClient {
     private static final String STREETS_PATH = "/streets";
     private static final String HOUSES_PATH = "/houses";
     private static final String GROUP_PATH = "/group";
+    public static final String DEFAULT_SUBGROUP = ".1";
 
     private final RestClient restClient;
     private final JsonMapper mapper;
@@ -137,11 +138,21 @@ public class YasnoClient {
                 log.warn("Unexpected non-JSON YASNO group payload: {}", snippet(json));
                 return "";
             }
+            String compositeFromRoot = groupWithSubgroup(root);
+            if (!compositeFromRoot.isBlank()) {
+                return compositeFromRoot;
+            }
+
+            String compositeFromData = groupWithSubgroup(root.path("data"));
+            if (!compositeFromData.isBlank()) {
+                return compositeFromData;
+            }
+
             JsonNode candidate = firstPresent(
-                    root.path("group"),
                     root.path("groupId"),
-                    root.path("data").path("group"),
-                    root.path("data").path("groupId")
+                    root.path("group"),
+                    root.path("data").path("groupId"),
+                    root.path("data").path("group")
             );
 
             if (candidate == null || candidate.isMissingNode() || candidate.isNull()) {
@@ -177,6 +188,36 @@ public class YasnoClient {
             }
         }
         return null;
+    }
+
+    private String groupWithSubgroup(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return "";
+        }
+
+        JsonNode groupNode = firstPresent(node.path("groupId"), node.path("group"));
+        if (groupNode == null || groupNode.isMissingNode() || groupNode.isNull()) {
+            return "";
+        }
+        String group = text(groupNode).trim();
+        if (group.isBlank()) {
+            return "";
+        }
+
+        JsonNode subgroupNode = firstPresent(node.path("subgroup"), node.path("subGroup"));
+        if (subgroupNode == null || subgroupNode.isMissingNode() || subgroupNode.isNull()) {
+            return group.contains(".") ? group : group + DEFAULT_SUBGROUP;
+        }
+
+        String subgroup = text(subgroupNode).trim();
+        if (group.contains(".")) {
+            return group;
+        }
+        if (subgroup.isBlank()) {
+            return group + DEFAULT_SUBGROUP;
+        }
+
+        return group + "." + subgroup;
     }
 
     private JsonNode firstArray(JsonNode... candidates) {
